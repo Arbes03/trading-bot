@@ -7,6 +7,9 @@ on:
     # in Sommer- und Winterzeit ab. Außerhalb der Börsenzeit macht der Bot keine Prüfrunde.
     - cron: "*/15 7-16 * * 1-5"
   workflow_dispatch: # zum Ausprobieren: Actions -> Trading-Bot -> "Run workflow"
+  push: # neuer Code -> Webseite sofort aktualisieren (Bot-Speicherungen lösen das nicht aus)
+    branches: [main]
+    paths: ["**.py", "web/**", ".github/workflows/**", "motor.txt"]
 
 permissions:
   contents: write
