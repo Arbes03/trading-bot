@@ -20,8 +20,10 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         positionen.append({
             "ticker": ticker,
             "name": config.WATCHLIST.get(ticker, ticker),
+            "gruppe": config.GRUPPE.get(ticker, "Aktie"),
             "stueck": pos["stueck"],
             "einstandskurs": pos["einstandskurs"],
+            "investiert": pos["kosten"],  # Kaufpreis inklusive Gebühr
             "kurs": kurs,
             "wert": pos["stueck"] * kurs,
             "gewinn": pos["stueck"] * kurs - pos["kosten"],

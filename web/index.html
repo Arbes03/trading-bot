@@ -196,6 +196,23 @@
   .tooltip .zeile { display: flex; align-items: center; gap: 7px; }
   .muster { width: 12px; height: 3px; border-radius: 2px; flex: none; }
   .legende { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; flex-wrap: wrap; }
+
+  .aufteilung { display: flex; gap: 2px; height: 28px; margin: 6px 0 14px; }
+  .aufteilung > div { min-width: 4px; height: 100%; }
+  .aufteilung > div:first-child { border-radius: 4px 0 0 4px; }
+  .aufteilung > div:last-child { border-radius: 0 4px 4px 0; }
+  .aufteilung > div:only-child { border-radius: 4px; }
+  .aufteilung-legende { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  .aufteilung-legende > div { display: flex; gap: 10px; align-items: flex-start; }
+  .aufteilung-legende .muster { width: 12px; height: 12px; border-radius: 3px; margin-top: 4px; }
+  .aufteilung-legende .betrag { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .aufteilung-legende .klein { font-size: 12px; color: var(--text-muted); }
+  .anteil { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .anteil .balken { width: 70px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .anteil .balken > div { height: 100%; border-radius: 3px; }
+  tr.summe td { font-weight: 650; border-top: 2px solid var(--border); border-bottom: none; }
+  .link-knopf { background: none; border: none; padding: 0; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; }
+  .link-knopf:hover { background: none; text-decoration: underline; }
   .legende span { display: inline-flex; align-items: center; gap: 6px; }
 
   .karten-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin-bottom: 12px; }
@@ -269,6 +286,9 @@
     <button role="tab" data-ansicht="uebersicht" aria-selected="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
       Übersicht</button>
+    <button role="tab" data-ansicht="depot" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M21 9h-5a2 2 0 0 0 0 4h5z"/></svg>
+      Mein Depot</button>
     <button role="tab" data-ansicht="backtest" aria-selected="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
       Backtest</button>
@@ -298,7 +318,8 @@
 
     <div class="kacheln">
       <div class="kachel"><div class="titel">Depotwert</div><div class="wert" id="k-wert">–</div><div class="unter" id="k-wert-unter"></div></div>
-      <div class="kachel"><div class="titel">Aktiv investiert</div><div class="wert" id="k-bar">–</div><div class="unter" id="k-bar-unter"></div></div>
+      <div class="kachel"><div class="titel">Aktiv investiert</div><div class="wert" id="k-bar">–</div><div class="unter" id="k-bar-unter"></div>
+        <button class="link-knopf" onclick="zeigeAnsicht('depot')">Details in „Mein Depot“ →</button></div>
       <div class="kachel"><div class="titel">Abgeschlossene Trades</div><div class="wert" id="k-trades">–</div><div class="unter" id="k-trades-unter"></div></div>
     </div>
 
@@ -342,6 +363,22 @@
         <p class="hinweis">Was der Bot zuletzt gemacht hat.</p>
         <ul class="protokoll" id="protokoll"></ul>
       </div>
+    </div>
+  </section>
+
+  <!-- MEIN DEPOT -->
+  <section class="ansicht" id="depot" hidden>
+    <div class="kacheln" id="d-kacheln"></div>
+    <div class="karte">
+      <h2>Wo steckt dein Geld?</h2>
+      <p class="hinweis">Aufteilung deines Depots nach aktuellem Wert.</p>
+      <div class="aufteilung" id="d-balken" role="img"></div>
+      <div class="aufteilung-legende" id="d-legende"></div>
+    </div>
+    <div class="karte">
+      <h2>Deine Positionen</h2>
+      <p class="hinweis">Jede Aktie und jeder ETF, in den der Bot gerade investiert ist. „Investiert“ = Kaufpreis inklusive Gebühr.</p>
+      <div class="tabelle-wrap" id="d-positionen"></div>
     </div>
   </section>
 
@@ -615,6 +652,7 @@ async function statusLaden() {
   $("k-bar").textContent = eur.format(investiert);
   $("k-bar-unter").textContent = `in ${s.positionen.length} Wert${s.positionen.length === 1 ? "" : "en"} · Bargeld ${eur.format(s.bargeld)}`;
   marktZeigen(s);
+  depotZeigen(s);
   const st = s.statistik;
   $("k-trades").textContent = st.anzahl;
   $("k-trades-unter").textContent = st.anzahl ? `${st.gewinn_trades} mit Gewinn (${Math.round((st.gewinn_trades / st.anzahl) * 100)} %) · Gebühren ${eur.format(st.gebuehren)}` : "Noch keine";
@@ -698,6 +736,56 @@ function ergebnisZeigen(s) {
   $("e-offen").innerHTML = s.positionen.length ? tendenz(e.offen, vorzeichen(e.offen)) : "–";
   $("e-real").innerHTML = s.statistik.anzahl ? tendenz(e.realisiert, vorzeichen(e.realisiert)) : "–";
   document.title = `${vorzeichen(e.gesamt)} · Demo-Trading-Bot`;
+}
+
+// ---------- Mein Depot ----------
+const GRUPPEN_FARBE = { Aktie: "--series-1", ETF: "--series-2", Bargeld: "--text-muted" };
+
+function depotZeigen(s) {
+  const pos = [...s.positionen].sort((a, b) => b.wert - a.wert);
+  const investiert = pos.reduce((x, p) => x + p.investiert, 0);
+  const wert = pos.reduce((x, p) => x + p.wert, 0);
+  const gv = wert - investiert;
+  const kachel = (titel, inhalt, unter) => `<div class="kachel"><div class="titel">${titel}</div><div class="wert">${inhalt}</div><div class="unter">${unter}</div></div>`;
+  $("d-kacheln").innerHTML =
+    kachel("Investiert (Kaufpreis)", eur.format(investiert), `in ${pos.length} Wert${pos.length === 1 ? "" : "en"}`) +
+    kachel("Aktueller Wert", eur.format(wert), "was die Positionen jetzt wert sind") +
+    kachel("Gewinn / Verlust", pos.length ? tendenz(gv, vorzeichen(gv)) : "–", pos.length ? prozent.format(investiert ? gv / investiert : 0) + " auf den Kaufpreis" : "noch nichts investiert") +
+    kachel("Bargeld", eur.format(s.bargeld), "liegt bereit für neue Käufe");
+
+  // Aufteilung nach Art
+  const teile = [
+    { name: "Aktien", gruppe: "Aktie", wert: pos.filter((p) => p.gruppe === "Aktie").reduce((x, p) => x + p.wert, 0),
+      anzahl: pos.filter((p) => p.gruppe === "Aktie").length },
+    { name: "ETFs", gruppe: "ETF", wert: pos.filter((p) => p.gruppe === "ETF").reduce((x, p) => x + p.wert, 0),
+      anzahl: pos.filter((p) => p.gruppe === "ETF").length },
+    { name: "Bargeld", gruppe: "Bargeld", wert: s.bargeld, anzahl: null },
+  ];
+  const gesamt = teile.reduce((x, t) => x + t.wert, 0) || 1;
+  $("d-balken").setAttribute("aria-label", teile.map((t) => `${t.name} ${Math.round((t.wert / gesamt) * 100)} %`).join(", "));
+  $("d-balken").innerHTML = teile.filter((t) => t.wert > 0).map((t) =>
+    `<div style="flex:${t.wert / gesamt};background:var(${GRUPPEN_FARBE[t.gruppe]})" title="${t.name}: ${eur.format(t.wert)} (${prozent.format(t.wert / gesamt).replace("+", "")})"></div>`).join("");
+  $("d-legende").innerHTML = teile.map((t) => `<div><span class="muster" style="background:var(${GRUPPEN_FARBE[t.gruppe]})"></span>
+    <div><div>${t.name}</div><div class="betrag">${eur.format(t.wert)}</div>
+    <div class="klein">${prozent.format(t.wert / gesamt).replace("+", "")} vom Depot${t.anzahl != null ? ` · ${t.anzahl} Position${t.anzahl === 1 ? "" : "en"}` : ""}</div></div></div>`).join("");
+
+  if (!pos.length) {
+    $("d-positionen").innerHTML = `<div class="leer">Der Bot hat gerade kein Geld investiert. Alles liegt als Bargeld bereit (${eur.format(s.bargeld)}).</div>`;
+    return;
+  }
+  const depotwert = s.depotwert || 1;
+  $("d-positionen").innerHTML = `<table><thead><tr><th>Wert</th><th>Art</th><th class="zahl">Stück</th><th class="zahl">Kaufkurs</th><th class="zahl">Investiert</th><th class="zahl">Aktueller Wert</th><th class="zahl">Gewinn / Verlust</th><th class="zahl">Anteil am Depot</th></tr></thead><tbody>` +
+    pos.map((p) => {
+      const anteil = p.wert / depotwert;
+      return `<tr><td><strong>${esc(p.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${esc(p.ticker)} · seit ${esc(zeitKurz(p.kaufzeit))}</span></td>
+        <td><span class="art">${esc(p.gruppe)}</span></td><td class="zahl">${p.stueck}</td><td class="zahl">${eur.format(p.einstandskurs)}</td>
+        <td class="zahl">${eur.format(p.investiert)}</td><td class="zahl">${eur.format(p.wert)}</td>
+        <td class="zahl">${tendenz(p.gewinn, vorzeichen(p.gewinn))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(p.investiert ? p.gewinn / p.investiert : 0)}</span></td>
+        <td class="zahl"><div class="anteil"><div class="balken"><div style="width:${(anteil * 100).toFixed(1)}%;background:var(${GRUPPEN_FARBE[p.gruppe]})"></div></div>${(anteil * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 })} %</div></td></tr>`;
+    }).join("") +
+    `<tr class="summe"><td>Summe</td><td></td><td></td><td></td><td class="zahl">${eur.format(investiert)}</td><td class="zahl">${eur.format(wert)}</td>
+      <td class="zahl">${tendenz(gv, vorzeichen(gv))}</td><td class="zahl">${((wert / depotwert) * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 })} %</td></tr>` +
+    `</tbody></table>`;
 }
 
 // ---------- Beobachtete Werte ----------
