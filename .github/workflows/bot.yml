@@ -1,0 +1,62 @@
+# Lässt den Spielgeld-Bot bei GitHub laufen - auch wenn dein PC aus ist.
+name: Trading-Bot (Spielgeld)
+
+on:
+  schedule:
+    # Alle 15 Minuten, Mo-Fr, 7-16 Uhr UTC. Das deckt die Xetra-Zeit 9:00-17:30 deutscher Zeit
+    # in Sommer- und Winterzeit ab. Außerhalb der Börsenzeit macht der Bot keine Prüfrunde.
+    - cron: "*/15 7-16 * * 1-5"
+  workflow_dispatch: # zum Ausprobieren: Actions -> Trading-Bot -> "Run workflow"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Nie zwei Runden gleichzeitig, sonst würde das Depot doppelt verändert
+concurrency:
+  group: trading-bot
+  cancel-in-progress: false
+
+jobs:
+  runde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Pakete installieren
+        run: pip install -r requirements.txt
+
+      - name: Prüfrunde
+        run: python cloud_runde.py
+
+      - name: Stand speichern
+        run: |
+          git config user.name "trading-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for datei in depot.json trades.csv verlauf.csv protokoll.json; do
+            [ -f "$datei" ] && git add "$datei"
+          done
+          if ! git diff --cached --quiet; then
+            git commit -m "Bot-Runde $(date -u '+%Y-%m-%d %H:%M') UTC"
+            git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  webseite:
+    needs: runde
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.veroeffentlichen.outputs.page_url }}
+    steps:
+      - id: veroeffentlichen
+        uses: actions/deploy-pages@v4

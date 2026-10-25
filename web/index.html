@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo-Trading-Bot</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2;
+    --surface-1: #fcfcfb;
+    --surface-2: #f0efec;
+    --border: #e2e1dc;
+    --grid: #ebeae6;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #7a7974;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --good: #0ca30c;
+    --critical: #d03b3b;
+    --warning: #fab219;
+    --accent: #2a78d6;
+    --accent-ink: #ffffff;
+    --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111110;
+      --surface-1: #1a1a19;
+      --surface-2: #232321;
+      --border: #2f2f2c;
+      --grid: #2a2a28;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #8f8e86;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --accent: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111110;
+    --surface-1: #1a1a19;
+    --surface-2: #232321;
+    --border: #2f2f2c;
+    --grid: #2a2a28;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e86;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --accent: #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .seite { max-width: 1400px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+    margin-bottom: 16px;
+  }
+  header h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .badge {
+    font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-secondary); border: 1px solid var(--border);
+  }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; padding: 5px 11px; border-radius: 999px;
+    background: var(--surface-1); border: 1px solid var(--border); color: var(--text-secondary);
+  }
+  .punkt { width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); flex: none; }
+  .punkt.gut { background: var(--good); }
+  .punkt.warn { background: var(--warning); }
+
+  button {
+    font: inherit; font-weight: 600; cursor: pointer;
+    border-radius: 9px; padding: 8px 16px; border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-primary);
+  }
+  button:hover { background: var(--surface-2); }
+  button.haupt { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  button.haupt:hover { filter: brightness(1.08); }
+  button.gefahr { color: var(--critical); }
+  button:disabled { opacity: 0.55; cursor: default; }
+
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+  main { min-width: 0; }
+  nav {
+    position: sticky; top: 16px;
+    display: flex; flex-direction: column; gap: 2px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px;
+  }
+  nav button {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    border: none; background: none; border-radius: 8px; padding: 10px 12px;
+    color: var(--text-secondary); font-weight: 500; line-height: 1.3;
+  }
+  nav button svg { width: 18px; height: 18px; flex: none; }
+  nav button:hover { background: var(--surface-2); color: var(--text-primary); }
+  nav button[aria-selected="true"] {
+    background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text-primary); font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    nav { position: static; flex-direction: row; overflow-x: auto; }
+    nav button { width: auto; white-space: nowrap; }
+  }
+
+  .ansicht[hidden] { display: none; }
+  .cloud .nur-lokal, :root:not(.cloud) .nur-cloud { display: none !important; }
+  .kacheln { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kachel, .karte {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .kachel { padding: 14px 16px; }
+  .kachel .titel { font-size: 13px; color: var(--text-secondary); }
+  .kachel .wert { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .kachel .unter { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .tendenz { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+  .tendenz::before { content: ""; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+  .tendenz.plus::before { border-bottom: 7px solid var(--good); }
+  .tendenz.minus::before { border-top: 7px solid var(--critical); }
+
+  .ergebnis {
+    display: grid; grid-template-columns: minmax(240px, 1fr) 2fr; gap: 16px 24px; align-items: center;
+    background: var(--surface-1); border: 1px solid var(--border); border-left: 6px solid var(--text-muted);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px;
+  }
+  .ergebnis.plus { border-left-color: var(--good); background: color-mix(in srgb, var(--good) 9%, var(--surface-1)); }
+  .ergebnis.minus { border-left-color: var(--critical); background: color-mix(in srgb, var(--critical) 9%, var(--surface-1)); }
+  .ergebnis-label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 650; }
+  .ergebnis-label .symbol {
+    width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center;
+    font-size: 12px; color: #fff; background: var(--text-muted); flex: none;
+  }
+  .ergebnis.plus .symbol { background: var(--good); }
+  .ergebnis.minus .symbol { background: var(--critical); }
+  .ergebnis-wert { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .ergebnis-unter { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+  .ergebnis-teile { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .ergebnis-teile > div { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .ergebnis-teile .titel { font-size: 13px; color: var(--text-secondary); }
+  .ergebnis-teile .zahl { font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .ergebnis-teile .klein { font-size: 12px; color: var(--text-muted); }
+  @media (max-width: 760px) {
+    .ergebnis { grid-template-columns: 1fr; }
+    .ergebnis-teile { grid-template-columns: 1fr; }
+  }
+
+  .karte { padding: 16px; margin-bottom: 16px; }
+  .karte h2 { font-size: 16px; margin: 0 0 4px; }
+  .karte .hinweis { font-size: 13px; color: var(--text-muted); margin: 0 0 12px; }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .zwei > .karte { margin-bottom: 0; }
+  @media (max-width: 860px) { .zwei { grid-template-columns: 1fr; } }
+
+  .tabelle-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-weight: 600; font-size: 12px; color: var(--text-secondary); padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  td.zahl, th.zahl { text-align: right; }
+  td.grund { white-space: normal; color: var(--text-secondary); min-width: 180px; }
+  .art { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); }
+  .leer { color: var(--text-muted); font-size: 14px; padding: 18px 4px; text-align: center; }
+
+  .protokoll { list-style: none; margin: 0; padding: 0; max-height: 330px; overflow-y: auto; font-size: 13px; }
+  .protokoll li { padding: 6px 2px; border-bottom: 1px solid var(--grid); display: flex; gap: 10px; }
+  .protokoll time { color: var(--text-muted); flex: none; font-variant-numeric: tabular-nums; }
+
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart .achse { font-size: 11px; fill: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .chart .gitter { stroke: var(--grid); stroke-width: 1; }
+  .chart .referenz { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 4 4; }
+  .chart .linie { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .direkt { font-size: 12px; fill: var(--text-secondary); font-weight: 600; }
+  .chart .fadenkreuz { stroke: var(--text-muted); stroke-width: 1; }
+  .tooltip {
+    position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    white-space: nowrap; z-index: 2; font-variant-numeric: tabular-nums;
+  }
+  .tooltip .zeit { color: var(--text-muted); font-size: 12px; margin-bottom: 2px; }
+  .tooltip .zeile { display: flex; align-items: center; gap: 7px; }
+  .muster { width: 12px; height: 3px; border-radius: 2px; flex: none; }
+  .legende { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; flex-wrap: wrap; }
+  .legende span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .karten-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin-bottom: 12px; }
+  .karten-kopf .hinweis { margin: 0; }
+  .zusammenfassung { font-size: 14px; font-weight: 600; margin: 2px 0 0; }
+  .werkzeuge { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-weight: 500; font-size: 13px; padding: 5px 12px; border-radius: 999px;
+    background: var(--surface-1); color: var(--text-secondary);
+  }
+  .chip[aria-pressed="true"] { background: var(--text-primary); color: var(--surface-1); border-color: transparent; }
+  .chip .anzahl { opacity: 0.7; margin-left: 4px; font-variant-numeric: tabular-nums; }
+  .werkzeuge input, .werkzeuge select {
+    font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+  }
+  .werkzeuge input { flex: 1 1 160px; max-width: 260px; }
+  #uebersicht .werkzeuge { flex-direction: column; align-items: stretch; }
+  .werkzeuge .rechts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .werte { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .wert-karte {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--surface-1);
+    display: flex; flex-direction: column; gap: 4px; position: relative;
+  }
+  .wert-karte.investiert { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+  .wert-karte .kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .wert-karte .name { font-weight: 650; font-size: 15px; line-height: 1.3; }
+  .wert-karte .ticker { font-size: 12px; color: var(--text-muted); }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-secondary);
+  }
+  .status-badge.aktiv { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text-primary); }
+  .status-badge.aktiv .punkt { background: var(--accent); }
+  .wert-karte .kurs { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .wert-karte .tag { font-size: 13px; color: var(--text-secondary); }
+  .wert-karte svg { width: 100%; height: 52px; display: block; margin: 4px 0; }
+  .wert-karte .fuss { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; gap: 8px; }
+  .wert-karte .position { font-size: 13px; border-top: 1px solid var(--grid); padding-top: 6px; margin-top: 2px; }
+  .wert-karte .position .klein { color: var(--text-muted); font-size: 12px; }
+
+  .regeln { margin: 0; padding-left: 20px; }
+  .regeln li { margin: 4px 0; }
+  .warnbox {
+    border: 1px solid var(--border); border-left: 4px solid var(--warning); background: var(--surface-1);
+    border-radius: 10px; padding: 12px 14px; font-size: 14px; margin-bottom: 16px; color: var(--text-secondary);
+  }
+  .warnbox strong { color: var(--text-primary); }
+  .lade { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: dreh 0.8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes dreh { to { transform: rotate(360deg); } }
+  details summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); margin-top: 10px; }
+  footer { font-size: 12px; color: var(--text-muted); margin-top: 28px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="seite">
+  <header>
+    <h1>Demo-Trading-Bot</h1>
+    <span class="badge">Nur Spielgeld</span>
+    <div class="pills">
+      <span class="pill"><span class="punkt" id="bot-punkt"></span><span id="bot-text">Bot …</span></span>
+      <span class="pill"><span class="punkt" id="boerse-punkt"></span><span id="boerse-text">Börse …</span></span>
+      <button id="bot-knopf" class="haupt nur-lokal">…</button>
+    </div>
+  </header>
+
+  <div class="layout">
+  <nav role="tablist" aria-orientation="vertical" aria-label="Bereiche">
+    <button role="tab" data-ansicht="uebersicht" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Übersicht</button>
+    <button role="tab" data-ansicht="backtest" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+      Backtest</button>
+    <button role="tab" data-ansicht="trades" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+      Alle Trades</button>
+    <button role="tab" data-ansicht="einstellungen" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      Strategie &amp; Einstellungen</button>
+  </nav>
+  <main>
+
+  <!-- ÜBERSICHT -->
+  <section class="ansicht" id="uebersicht">
+    <div class="ergebnis" id="ergebnis" aria-live="polite">
+      <div>
+        <div class="ergebnis-label"><span class="symbol" id="e-symbol">●</span><span id="e-label">Lade …</span></div>
+        <div class="ergebnis-wert" id="e-wert">–</div>
+        <div class="ergebnis-unter" id="e-unter"></div>
+      </div>
+      <div class="ergebnis-teile">
+        <div><div class="titel">Heute</div><div class="zahl" id="e-heute">–</div><div class="klein" id="e-heute-unter"></div></div>
+        <div><div class="titel">Offene Positionen</div><div class="zahl" id="e-offen">–</div><div class="klein">noch nicht verkauft, kann sich ändern</div></div>
+        <div><div class="titel">Verkaufte Trades</div><div class="zahl" id="e-real">–</div><div class="klein">fest, inkl. Gebühren</div></div>
+      </div>
+    </div>
+
+    <div class="kacheln">
+      <div class="kachel"><div class="titel">Depotwert</div><div class="wert" id="k-wert">–</div><div class="unter" id="k-wert-unter"></div></div>
+      <div class="kachel"><div class="titel">Aktiv investiert</div><div class="wert" id="k-bar">–</div><div class="unter" id="k-bar-unter"></div></div>
+      <div class="kachel"><div class="titel">Abgeschlossene Trades</div><div class="wert" id="k-trades">–</div><div class="unter" id="k-trades-unter"></div></div>
+    </div>
+
+    <div class="karte">
+      <div class="karten-kopf">
+        <div>
+          <h2>Beobachtete Werte</h2>
+          <p class="zusammenfassung" id="markt-zusammenfassung"></p>
+        </div>
+        <p class="hinweis" id="markt-stand"></p>
+      </div>
+      <div class="werkzeuge">
+        <div class="chips" id="filter-chips" role="group" aria-label="Filter"></div>
+        <div class="rechts">
+          <input type="search" id="suche" placeholder="Suchen, z. B. SAP" aria-label="Werte durchsuchen">
+          <select id="sortierung" aria-label="Sortierung">
+            <option value="investiert">Investierte zuerst</option>
+            <option value="gewinner">Gewinner heute zuerst</option>
+            <option value="verlierer">Verlierer heute zuerst</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+      </div>
+      <div class="werte" id="markt"><div class="leer">Lade Kurse …</div></div>
+    </div>
+
+    <div class="karte">
+      <h2>Depotwert-Verlauf</h2>
+      <p class="hinweis">Ein Punkt pro Prüfrunde (alle 5 Minuten während der Handelszeit). Gestrichelt: Startkapital.</p>
+      <div class="chart" id="chart-verlauf"></div>
+    </div>
+
+    <div class="zwei">
+      <div class="karte">
+        <h2>Offene Positionen</h2>
+        <p class="hinweis">Was der Bot gerade hält. Um 17:20 Uhr wird alles verkauft.</p>
+        <div class="tabelle-wrap" id="positionen"></div>
+      </div>
+      <div class="karte">
+        <h2>Aktivität</h2>
+        <p class="hinweis">Was der Bot zuletzt gemacht hat.</p>
+        <ul class="protokoll" id="protokoll"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKTEST -->
+  <section class="ansicht" id="backtest" hidden>
+    <div class="karte">
+      <h2>Backtest: Wie hätte der Bot in der Vergangenheit abgeschnitten?</h2>
+      <p class="hinweis">Spielt einen Strategie-Motor auf echten vergangenen Kursen durch, inklusive Gebühren. Dauert bis zu einer Minute.</p>
+      <div class="werkzeuge">
+        <div class="chips" id="bt-motoren" role="group" aria-label="Motor für den Backtest"></div>
+      </div>
+      <p class="nur-cloud zusammenfassung">Backtests laufen nur in der Version auf deinem PC (Doppelklick auf START).</p>
+      <button id="backtest-knopf" class="haupt nur-lokal">Backtest starten</button>
+      <span id="backtest-status" style="margin-left:10px;font-size:14px;color:var(--text-secondary)"></span>
+    </div>
+    <div class="karte" id="bt-vergleich-karte" hidden>
+      <h2>Vergleich der Motoren</h2>
+      <p class="hinweis">Die zuletzt getesteten Motoren nebeneinander. Achtung: Die Zeiträume können unterschiedlich lang sein.</p>
+      <div class="tabelle-wrap" id="bt-vergleich"></div>
+    </div>
+    <div id="backtest-ergebnis" hidden>
+      <div class="kacheln" id="bt-kacheln"></div>
+      <div class="karte">
+        <h2 id="bt-titel">Bot vs. einfach kaufen und halten</h2>
+        <p class="hinweis" id="bt-zeitraum"></p>
+        <div class="legende">
+          <span><span class="muster" style="background:var(--series-1)"></span>Bot</span>
+          <span><span class="muster" style="background:var(--series-2)"></span>Kaufen &amp; halten</span>
+        </div>
+        <div class="chart" id="chart-backtest"></div>
+        <details><summary>Als Tabelle anzeigen (Tagesschluss)</summary><div class="tabelle-wrap" id="bt-tabelle"></div></details>
+      </div>
+      <div class="karte">
+        <h2>Letzte 50 Aktionen im Backtest</h2>
+        <div class="tabelle-wrap" id="bt-trades"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRADES -->
+  <section class="ansicht" id="trades" hidden>
+    <div class="karte">
+      <h2>Alle Trades mit Spielgeld</h2>
+      <p class="hinweis">Die letzten 100 Käufe und Verkäufe, neueste oben. Gewinn inklusive Gebühren.</p>
+      <div class="tabelle-wrap" id="alle-trades"></div>
+    </div>
+  </section>
+
+  <!-- EINSTELLUNGEN -->
+  <section class="ansicht" id="einstellungen" hidden>
+    <div class="karte">
+      <h2>Strategie-Motor</h2>
+      <p class="hinweis">Mit welchem Motor der Bot handelt. Ein Wechsel gilt ab der nächsten Prüfrunde. Vorher im Backtest vergleichen!</p>
+      <div class="werte" id="motoren"></div>
+    </div>
+    <div class="karte">
+      <h2 id="regeln-titel">So handelt der Bot</h2>
+      <ul class="regeln" id="regeln"></ul>
+      <p class="hinweis" style="margin-top:12px">Ändern kannst du alles in der Datei <strong>config.py</strong> (mit dem Editor öffnen). Danach die Webseite neu starten und zuerst einen Backtest machen.</p>
+    </div>
+    <div class="karte">
+      <h2>Beobachtete Werte</h2>
+      <p class="hinweis">Nur Beispiele zum Testen, keine Empfehlung.</p>
+      <div id="watchlist"></div>
+    </div>
+    <div class="karte nur-cloud">
+      <h2>Cloud-Version</h2>
+      <p class="hinweis">Diese Seite liegt bei GitHub. Der Bot läuft dort alle 15 Minuten (Mo–Fr während der Börsenzeit), auch wenn dein PC aus ist.
+        Hier kannst du nur zuschauen. Motor wechseln oder Depot zurücksetzen geht über die Dateien im GitHub-Projekt (siehe Anleitung).</p>
+    </div>
+    <div class="karte nur-lokal">
+      <h2>Rund um die Uhr laufen</h2>
+      <p class="zusammenfassung" id="autostart-text"></p>
+      <p class="hinweis" style="margin-top:6px">Der Autostart startet Bot und Webseite nach jedem Hochfahren automatisch und unsichtbar im Hintergrund.
+        Einschalten: Doppelklick auf <strong>autostart_einschalten</strong> im Ordner. Ausschalten: <strong>autostart_ausschalten</strong>.
+        Wichtig: Der PC darf nicht in den Energiesparmodus gehen (Einstellungen → System → Energie). Was passiert, steht in der Datei <strong>bot.log</strong>.</p>
+      <button id="beenden-knopf" class="gefahr">Bot &amp; Webseite beenden</button>
+    </div>
+    <div class="karte nur-lokal">
+      <h2>Von vorn anfangen</h2>
+      <p class="hinweis">Setzt das Spielgeld auf das Startkapital zurück und löscht alle Trades und den Verlauf.</p>
+      <button id="reset-knopf" class="gefahr">Depot zurücksetzen</button>
+    </div>
+  </section>
+  </main>
+  </div>
+
+  <footer><span class="nur-lokal">Läuft nur auf diesem PC</span><span class="nur-cloud">Cloud-Version bei GitHub, aktualisiert alle 15 Minuten</span> · Kurse von Yahoo Finance, ca. 15 Minuten verzögert · Kein echtes Geld, keine Anlageberatung</footer>
+</div>
+
+<script>
+const eur = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+const eurKurz = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+const prozent = new Intl.NumberFormat("de-DE", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "always" });
+const vorzeichen = (x) => (x > 0 ? "+" : x < 0 ? "−" : "±") + eur.format(Math.abs(x));
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function tendenz(x, text) {
+  const cls = x > 0.005 ? "plus" : x < -0.005 ? "minus" : "";
+  return `<span class="tendenz ${cls}">${text}</span>`;
+}
+
+// Bei GitHub Pages gibt es keinen eigenen Server: dann nur lesen aus status.json
+const CLOUD = !["localhost", "127.0.0.1"].includes(location.hostname);
+document.documentElement.classList.toggle("cloud", CLOUD);
+
+async function api(pfad, methode = "GET") {
+  if (CLOUD) {
+    if (methode !== "GET") throw new Error("In der Cloud-Version nicht möglich");
+    if (pfad === "/api/backtest") return { laeuft: false, ergebnisse: {} };
+    if (pfad === "/api/status") pfad = `status.json?t=${Date.now()}`;
+  }
+  const antwort = await fetch(pfad, { method: methode, headers: methode === "POST" ? { "X-Trading-Bot": "1" } : {} });
+  if (!antwort.ok) throw new Error(antwort.statusText);
+  return antwort.json();
+}
+
+// ---------- Tabs ----------
+document.querySelectorAll("nav button").forEach((knopf) => {
+  knopf.addEventListener("click", () => zeigeAnsicht(knopf.dataset.ansicht));
+});
+function zeigeAnsicht(name) {
+  document.querySelectorAll("nav button").forEach((k) => k.setAttribute("aria-selected", k.dataset.ansicht === name));
+  document.querySelectorAll(".ansicht").forEach((s) => (s.hidden = s.id !== name));
+  try { localStorage.setItem("ansicht", name); } catch (e) {}
+  neuZeichnen();
+}
+
+// ---------- Linien-Chart (SVG) ----------
+function zeitKurz(z) { // "2026-10-26 09:05:00" -> "26.10. 09:05"
+  const [d, t = ""] = String(z).split(" ");
+  const [, m, tag] = d.split("-");
+  return `${tag}.${m}. ${t.slice(0, 5)}`;
+}
+
+function schoeneSchritte(min, max, anzahl = 4) {
+  const roh = (max - min) / anzahl;
+  const basis = Math.pow(10, Math.floor(Math.log10(roh)));
+  const schritt = [1, 2, 2.5, 5, 10].map((f) => f * basis).find((s) => s >= roh) || roh;
+  const start = Math.floor(min / schritt) * schritt;
+  const werte = [];
+  for (let v = start; v <= max + schritt * 0.5; v += schritt) werte.push(v);
+  return werte;
+}
+
+const charts = {};
+function linienChart(id, { zeiten, serien, referenz }) {
+  charts[id] = { zeiten, serien, referenz };
+  zeichneChart(id);
+}
+function neuZeichnen() { Object.keys(charts).forEach(zeichneChart); }
+window.addEventListener("resize", neuZeichnen);
+
+function zeichneChart(id) {
+  const el = $(id);
+  const { zeiten, serien, referenz } = charts[id];
+  if (!el.offsetParent) return; // unsichtbarer Tab
+  const breite = el.clientWidth, hoehe = 260;
+  const direkt = serien.length > 1 && breite > 520;
+  const r = { l: 60, r: direkt ? 104 : 14, o: 10, u: 26 };
+  const innenB = breite - r.l - r.r, innenH = hoehe - r.o - r.u;
+
+  const alle = serien.flatMap((s) => s.werte).concat(referenz ?? []);
+  let min = Math.min(...alle), max = Math.max(...alle);
+  if (max - min < 1) { min -= 50; max += 50; }
+  const pad = (max - min) * 0.06; min -= pad; max += pad;
+  const ticks = schoeneSchritte(min, max);
+  min = Math.min(min, ticks[0]); max = Math.max(max, ticks[ticks.length - 1]);
+
+  const n = zeiten.length;
+  const x = (i) => r.l + (n <= 1 ? innenB / 2 : (i / (n - 1)) * innenB);
+  const y = (v) => r.o + innenH - ((v - min) / (max - min)) * innenH;
+
+  let svg = `<svg viewBox="0 0 ${breite} ${hoehe}" height="${hoehe}" role="img" aria-label="Liniendiagramm">`;
+  ticks.forEach((t) => {
+    if (t < min || t > max) return;
+    svg += `<line class="gitter" x1="${r.l}" x2="${r.l + innenB}" y1="${y(t)}" y2="${y(t)}"/>`;
+    svg += `<text class="achse" x="${r.l - 8}" y="${y(t) + 4}" text-anchor="end">${eurKurz.format(t)} €</text>`;
+  });
+  const xAnzahl = Math.max(2, Math.min(6, Math.floor(innenB / 120)));
+  const mehrereJahre = String(zeiten[0]).slice(0, 4) !== String(zeiten[n - 1]).slice(0, 4);
+  for (let k = 0; k < xAnzahl; k++) {
+    const i = Math.round((k / (xAnzahl - 1)) * (n - 1));
+    const anker = k === 0 ? "start" : k === xAnzahl - 1 ? "end" : "middle";
+    const [jahr, monat] = String(zeiten[i]).split("-");
+    const text = mehrereJahre ? `${monat}/${jahr}` : zeitKurz(zeiten[i]).split(" ")[0];
+    svg += `<text class="achse" x="${x(i)}" y="${hoehe - 6}" text-anchor="${anker}">${esc(text)}</text>`;
+  }
+  if (referenz != null) svg += `<line class="referenz" x1="${r.l}" x2="${r.l + innenB}" y1="${y(referenz)}" y2="${y(referenz)}"/>`;
+
+  serien.forEach((s) => {
+    const d = s.werte.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    svg += `<path class="linie" d="${d}" stroke="var(${s.farbe})"/>`;
+  });
+
+  if (direkt) { // Namen direkt ans Linienende, ohne Überlappung
+    const enden = serien.map((s) => ({ s, y: y(s.werte[n - 1]) })).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < enden.length; i++) if (enden[i].y - enden[i - 1].y < 16) enden[i].y = enden[i - 1].y + 16;
+    enden.forEach(({ s, y: yy }) => {
+      svg += `<text class="direkt" x="${r.l + innenB + 8}" y="${yy + 4}">${esc(s.kurz)}</text>`;
+    });
+  }
+  svg += `<line class="fadenkreuz" id="${id}-fk" y1="${r.o}" y2="${r.o + innenH}" visibility="hidden"/>`;
+  serien.forEach((s, j) => {
+    svg += `<circle id="${id}-p${j}" r="4.5" fill="var(${s.farbe})" stroke="var(--surface-1)" stroke-width="2" visibility="hidden"/>`;
+  });
+  svg += `<rect x="${r.l}" y="0" width="${innenB}" height="${hoehe}" fill="transparent" id="${id}-flaeche"/>`;
+  svg += `</svg><div class="tooltip" id="${id}-tt" hidden></div>`;
+  el.innerHTML = svg;
+
+  const flaeche = $(`${id}-flaeche`), fk = $(`${id}-fk`), tt = $(`${id}-tt`);
+  const verstecken = () => { fk.setAttribute("visibility", "hidden"); tt.hidden = true; serien.forEach((_, j) => $(`${id}-p${j}`).setAttribute("visibility", "hidden")); };
+  flaeche.addEventListener("pointerleave", verstecken);
+  flaeche.addEventListener("pointermove", (ev) => {
+    const box = el.querySelector("svg").getBoundingClientRect();
+    const px = ((ev.clientX - box.left) / box.width) * breite;
+    const i = Math.max(0, Math.min(n - 1, Math.round(((px - r.l) / innenB) * (n - 1))));
+    fk.setAttribute("x1", x(i)); fk.setAttribute("x2", x(i)); fk.setAttribute("visibility", "visible");
+    serien.forEach((s, j) => {
+      const p = $(`${id}-p${j}`);
+      p.setAttribute("cx", x(i)); p.setAttribute("cy", y(s.werte[i])); p.setAttribute("visibility", "visible");
+    });
+    tt.innerHTML = `<div class="zeit">${esc(zeitKurz(zeiten[i]))}</div>` + serien.map((s) =>
+      `<div class="zeile"><span class="muster" style="background:var(${s.farbe})"></span>${esc(s.name)}: <strong>${eur.format(s.werte[i])}</strong></div>`).join("");
+    tt.hidden = false;
+    const links = x(i) + 14 + tt.offsetWidth > breite ? x(i) - 14 - tt.offsetWidth : x(i) + 14;
+    tt.style.left = `${links}px`; tt.style.top = `${r.o + 4}px`;
+  });
+}
+
+// ---------- Tabellen ----------
+function tradesTabelle(trades) {
+  if (!trades.length) return `<div class="leer">Noch keine Trades.</div>`;
+  return `<table><thead><tr><th>Zeit</th><th>Art</th><th>Wert</th><th class="zahl">Stück</th><th class="zahl">Kurs</th><th class="zahl">Gewinn</th><th>Grund</th></tr></thead><tbody>` +
+    trades.map((t) => {
+      const g = t.gewinn === "" || t.gewinn == null ? null : Number(t.gewinn);
+      return `<tr><td>${esc(zeitKurz(t.zeit))}</td><td><span class="art">${esc(t.art)}</span></td><td>${esc(t.ticker)}</td>
+        <td class="zahl">${esc(t.stueck)}</td><td class="zahl">${eur.format(Number(t.kurs))}</td>
+        <td class="zahl">${g == null ? "" : tendenz(g, vorzeichen(g))}</td><td class="grund">${esc(t.grund)}</td></tr>`;
+    }).join("") + `</tbody></table>`;
+}
+
+// ---------- Status ----------
+let letzterStatus = null;
+async function statusLaden() {
+  let s;
+  try { s = await api("/api/status"); }
+  catch (e) {
+    $("bot-text").textContent = "Keine Verbindung"; $("bot-punkt").className = "punkt warn";
+    $("boerse-text").textContent = "Läuft das schwarze Fenster noch?";
+    return;
+  }
+  letzterStatus = s;
+
+  $("bot-punkt").className = "punkt " + (s.bot_laeuft ? "gut" : "");
+  $("bot-text").textContent = s.cloud
+    ? `Cloud-Bot · Stand ${s.letzte_runde}`
+    : s.bot_laeuft ? (s.letzte_runde ? `Bot läuft · letzte Prüfung ${s.letzte_runde}` : "Bot läuft") : "Bot gestoppt";
+  $("boerse-punkt").className = "punkt " + (s.boerse_offen ? "gut" : "");
+  $("boerse-text").textContent = s.boerse_offen ? "Börse offen" : `Börse geschlossen (${s.einstellungen.boerse})`;
+  const knopf = $("bot-knopf");
+  knopf.disabled = false;
+  knopf.textContent = s.bot_laeuft ? "Bot stoppen" : "Bot starten";
+  knopf.classList.toggle("haupt", !s.bot_laeuft);
+
+  ergebnisZeigen(s);
+  $("k-wert").textContent = eur.format(s.depotwert);
+  $("k-wert-unter").textContent = `Start: ${eur.format(s.startkapital)}`;
+  const investiert = s.positionen.reduce((summe, p) => summe + p.wert, 0);
+  $("k-bar").textContent = eur.format(investiert);
+  $("k-bar-unter").textContent = `in ${s.positionen.length} Wert${s.positionen.length === 1 ? "" : "en"} · Bargeld ${eur.format(s.bargeld)}`;
+  marktZeigen(s);
+  const st = s.statistik;
+  $("k-trades").textContent = st.anzahl;
+  $("k-trades-unter").textContent = st.anzahl ? `${st.gewinn_trades} mit Gewinn (${Math.round((st.gewinn_trades / st.anzahl) * 100)} %) · Gebühren ${eur.format(st.gebuehren)}` : "Noch keine";
+
+  if (s.verlauf.length >= 2) {
+    linienChart("chart-verlauf", {
+      zeiten: s.verlauf.map((v) => v.zeit),
+      serien: [{ name: "Depotwert", kurz: "Depot", farbe: "--series-1", werte: s.verlauf.map((v) => v.wert) }],
+      referenz: s.startkapital,
+    });
+  } else {
+    delete charts["chart-verlauf"];
+    $("chart-verlauf").innerHTML = `<div class="leer">Noch keine Daten. Der Verlauf erscheint, sobald der Bot an einem Handelstag (Mo–Fr 9–17:30 Uhr) läuft.</div>`;
+  }
+
+  $("positionen").innerHTML = s.positionen.length
+    ? `<table><thead><tr><th>Wert</th><th class="zahl">Stück</th><th class="zahl">Kaufkurs</th><th class="zahl">Aktuell</th><th class="zahl">Gewinn</th></tr></thead><tbody>` +
+      s.positionen.map((p) => `<tr><td>${esc(p.name)}</td><td class="zahl">${p.stueck}</td><td class="zahl">${eur.format(p.einstandskurs)}</td>
+        <td class="zahl">${eur.format(p.kurs)}</td><td class="zahl">${tendenz(p.gewinn, vorzeichen(p.gewinn))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(p.prozent)}</span></td></tr>`).join("") +
+      `</tbody></table>`
+    : `<div class="leer">Keine offenen Positionen.</div>`;
+
+  $("protokoll").innerHTML = s.protokoll.length
+    ? s.protokoll.map((p) => `<li><time>${esc(p.zeit)}</time><span>${esc(p.text)}</span></li>`).join("")
+    : `<li class="leer">Noch nichts passiert.</li>`;
+
+  $("alle-trades").innerHTML = tradesTabelle(s.trades);
+
+  const e = s.einstellungen;
+  const m = e.motor;
+  const pz = (x) => `${(x * 100).toLocaleString("de-DE")} %`;
+  const kerze = m.intervall === "1h" ? "Stundenkerzen" : `${m.intervall.replace("m", "-Minuten")}-Kerzen`;
+  $("regeln-titel").textContent = `So handelt der Bot (Motor: ${m.titel})`;
+  $("regeln").innerHTML = [
+    `<strong>Kaufen</strong>, wenn ein Aufwärtstrend beginnt (schneller Durchschnitt kreuzt den langsamen nach oben, berechnet auf ${kerze})` +
+      (m.rsi_min_kauf > 0 ? `, genug Schwung da ist` : "") + ` und die Aktie nicht schon „überkauft“ ist`,
+    ...(m.trend_ema ? [`Nur kaufen, wenn die Aktie auch <strong>langfristig im Aufwärtstrend</strong> ist (über ihrem Durchschnitt der letzten ${m.trend_ema} Kerzen, ca. 1 Monat)`] : []),
+    `<strong>Verkaufen</strong> bei −${pz(m.stop_loss)} (Stop-Loss), bei +${pz(m.take_profit)} (Gewinnmitnahme) oder wenn der Kurs ${pz(m.trailing_stop)} unter sein Hoch seit dem Kauf fällt` +
+      (m.verkauf_bei_trendwende ? ", oder wenn der kurze Trend nach unten dreht" : "") +
+      (m.verkauf_unter_trend ? ", oder wenn der lange Trend bricht" : ""),
+    m.nichts_ueber_nacht
+      ? `Spätestens um <strong>${esc(e.alles_verkaufen_ab)} Uhr</strong> wird alles verkauft, nichts über Nacht`
+      : `Darf Aktien <strong>über Nacht und mehrere Tage</strong> halten`,
+    ...(m.max_kaeufe_pro_tag < 100 ? [`Höchstens <strong>${m.max_kaeufe_pro_tag} Käufe pro Tag</strong>`] : []),
+    ...(m.sperre_stunden ? [`Nach einem Verkauf wird dieselbe Aktie <strong>${m.sperre_stunden} Stunden</strong> nicht wieder gekauft`] : []),
+    `Höchstens <strong>${pz(e.max_anteil)}</strong> des Depots pro Aktie, höchstens <strong>${e.max_positionen}</strong> Positionen gleichzeitig`,
+    `Ab <strong>−${pz(e.tages_limit)}</strong> an einem Tag keine neuen Käufe mehr`,
+    `Kosten: <strong>${eur.format(e.gebuehr)}</strong> Gebühr pro Order plus Spread`,
+    `Handelszeit: <strong>${esc(e.boerse)} Uhr</strong>, geprüft wird alle ${Math.round(m.pruef_abstand / 60)} Minuten`,
+  ].map((t) => `<li>${t}</li>`).join("");
+  $("motoren").innerHTML = e.motoren.map((mo) => {
+    const aktiv = mo.name === m.name;
+    return `<div class="wert-karte ${aktiv ? "investiert" : ""}">
+      <div class="kopf"><div class="name">${esc(mo.titel)}</div>
+        ${aktiv ? `<span class="status-badge aktiv"><span class="punkt"></span>Aktiv</span>` : ""}</div>
+      <div class="tag">${esc(mo.beschreibung)}</div>
+      ${aktiv ? "" : `<div class="nur-lokal"><button data-motor="${esc(mo.name)}" style="margin-top:8px">Diesen Motor verwenden</button></div>`}
+    </div>`;
+  }).join("");
+  btMotorenZeigen(e.motoren);
+  $("autostart-text").innerHTML = s.autostart
+    ? `<span class="tendenz plus">Autostart ist an</span>: Bot und Webseite starten nach jedem Hochfahren von selbst.`
+    : `Autostart ist aus: Nach einem Neustart musst du <strong>START</strong> selbst doppelklicken.`;
+  if (letzterStatus.bot_laeuft) $("bot-text").textContent += ` · ${m.titel}`;
+  $("watchlist").innerHTML = e.watchlist.map((w) => `<span class="badge" style="display:inline-block;margin:0 6px 6px 0">${esc(w)}</span>`).join("");
+
+  backtestStatusAnzeigen(s.backtest);
+}
+
+// ---------- Plus oder Minus? ----------
+function ergebnisZeigen(s) {
+  const e = s.ergebnis;
+  const lage = e.gesamt > 0.005 ? "plus" : e.gesamt < -0.005 ? "minus" : "";
+  $("ergebnis").className = `ergebnis ${lage}`;
+  $("e-symbol").textContent = lage === "plus" ? "▲" : lage === "minus" ? "▼" : "●";
+  $("e-label").textContent = lage === "plus" ? "Du bist im Plus" : lage === "minus" ? "Du bist im Minus" : "Ausgeglichen: kein Gewinn, kein Verlust";
+  $("e-wert").textContent = vorzeichen(e.gesamt);
+  $("e-unter").textContent = `${prozent.format(e.gesamt / s.startkapital)} seit Start mit ${eur.format(s.startkapital)} Spielgeld`;
+  $("e-heute").innerHTML = tendenz(e.heute, vorzeichen(e.heute));
+  $("e-heute-unter").textContent = `${prozent.format(e.heute_prozent)}` + (e.realisiert_heute ? ` · davon verkauft ${vorzeichen(e.realisiert_heute)}` : "");
+  $("e-offen").innerHTML = s.positionen.length ? tendenz(e.offen, vorzeichen(e.offen)) : "–";
+  $("e-real").innerHTML = s.statistik.anzahl ? tendenz(e.realisiert, vorzeichen(e.realisiert)) : "–";
+  document.title = `${vorzeichen(e.gesamt)} · Demo-Trading-Bot`;
+}
+
+// ---------- Beobachtete Werte ----------
+const ansichtWerte = { filter: "alle", sortierung: "investiert", suche: "" };
+try { Object.assign(ansichtWerte, JSON.parse(localStorage.getItem("werte") || "{}"), { suche: "" }); } catch (e) {}
+$("sortierung").value = ansichtWerte.sortierung;
+function ansichtAendern(aenderung) {
+  Object.assign(ansichtWerte, aenderung);
+  try { localStorage.setItem("werte", JSON.stringify(ansichtWerte)); } catch (e) {}
+  if (letzterStatus) marktZeigen(letzterStatus);
+}
+$("sortierung").addEventListener("change", (ev) => ansichtAendern({ sortierung: ev.target.value }));
+$("suche").addEventListener("input", (ev) => ansichtAendern({ suche: ev.target.value.trim().toLowerCase() }));
+$("filter-chips").addEventListener("click", (ev) => {
+  const chip = ev.target.closest("[data-filter]");
+  if (chip) ansichtAendern({ filter: chip.dataset.filter });
+});
+
+function werteAuswaehlen(markt, positionen) {
+  const { filter, sortierung, suche } = ansichtWerte;
+  const liste = markt.filter((m) =>
+    (filter === "alle" || (filter === "investiert" ? positionen[m.ticker] : m.gruppe === filter)) &&
+    (!suche || `${m.name} ${m.ticker}`.toLowerCase().includes(suche)));
+  const sortierer = {
+    investiert: (a, b) => (positionen[b.ticker] ? 1 : 0) - (positionen[a.ticker] ? 1 : 0),
+    gewinner: (a, b) => b.veraenderung - a.veraenderung,
+    verlierer: (a, b) => a.veraenderung - b.veraenderung,
+    name: (a, b) => a.name.localeCompare(b.name, "de"),
+  }[sortierung];
+  return liste.sort(sortierer);
+}
+
+function marktZeigen(s) {
+  const positionen = Object.fromEntries(s.positionen.map((p) => [p.ticker, p]));
+  const anzahl = s.positionen.length;
+  $("markt-zusammenfassung").innerHTML = anzahl
+    ? `Der Bot ist gerade in <strong>${anzahl} von ${s.einstellungen.watchlist.length}</strong> Werten investiert.`
+    : s.bot_laeuft && s.boerse_offen
+      ? "Der Bot ist gerade nicht investiert und wartet auf ein Kaufsignal."
+      : "Der Bot ist gerade nicht investiert.";
+  if (!s.markt.length) return;
+  $("markt-stand").textContent = `Kursstand ${s.markt[0].stand} Uhr · ca. 15 Min. verzögert` + (s.boerse_offen ? "" : " · Börse geschlossen");
+
+  const zaehlen = (f) => s.markt.filter(f).length;
+  $("filter-chips").innerHTML = [
+    ["alle", "Alle", s.markt.length],
+    ["investiert", "Investiert", zaehlen((m) => positionen[m.ticker])],
+    ["Aktie", "Aktien (DAX)", zaehlen((m) => m.gruppe === "Aktie")],
+    ["ETF", "ETFs", zaehlen((m) => m.gruppe === "ETF")],
+  ].map(([wert, text, n]) => `<button class="chip" data-filter="${wert}" aria-pressed="${ansichtWerte.filter === wert}">${text}<span class="anzahl">${n}</span></button>`).join("");
+
+  const auswahl = werteAuswaehlen(s.markt, positionen);
+  if (!auswahl.length) {
+    $("markt").innerHTML = `<div class="leer" style="grid-column:1/-1">${ansichtWerte.filter === "investiert" && !ansichtWerte.suche ? "Der Bot ist gerade nirgends investiert." : "Keine Treffer."}</div>`;
+    return;
+  }
+
+  $("markt").innerHTML = auswahl.map((m) => {
+    const p = positionen[m.ticker];
+    const pfeil = m.trend === "auf" ? "↗ aufwärts" : "↘ abwärts";
+    return `<div class="wert-karte ${p ? "investiert" : ""}">
+      <div class="kopf">
+        <div><div class="name">${esc(m.name)}</div><div class="ticker">${esc(m.ticker)}</div></div>
+        ${p ? `<span class="status-badge aktiv"><span class="punkt"></span>Investiert</span>` : `<span class="status-badge">Beobachtet</span>`}
+      </div>
+      <div class="kurs">${eur.format(m.kurs)}</div>
+      <div class="tag">${tendenz(m.veraenderung * 100, prozent.format(m.veraenderung))} seit Vortag</div>
+      ${sparkline(m, p)}
+      <div class="fuss"><span data-hover title="Richtung der letzten ca. 1–2 Stunden – darauf reagiert der Bot">Kurztrend ${pfeil}</span><span title="Unter 30: stark gefallen, über 70: stark gestiegen (überkauft)">RSI ${Math.round(m.rsi)}</span></div>
+      ${p ? `<div class="position">${p.stueck} Stk. zu ${eur.format(p.einstandskurs)} · ${tendenz(p.gewinn, vorzeichen(p.gewinn))}
+        <div class="klein">${prozent.format(p.prozent)} · gekauft ${esc(zeitKurz(p.kaufzeit))} Uhr · Wert ${eur.format(p.wert)}</div></div>` : ""}
+    </div>`;
+  }).join("");
+
+  document.querySelectorAll(".wert-karte svg").forEach((el) => {
+    const label = el.closest(".wert-karte").querySelector("[data-hover]");
+    const normal = label.textContent;
+    const punkte = JSON.parse(el.dataset.punkte);
+    el.addEventListener("pointermove", (ev) => {
+      const box = el.getBoundingClientRect();
+      const i = Math.max(0, Math.min(punkte.length - 1, Math.round(((ev.clientX - box.left) / box.width) * (punkte.length - 1))));
+      label.textContent = `${punkte[i].zeit} Uhr: ${eur.format(punkte[i].kurs)}`;
+      const fk = el.querySelector(".fk");
+      fk.setAttribute("x1", (i / Math.max(1, punkte.length - 1)) * 200);
+      fk.setAttribute("x2", (i / Math.max(1, punkte.length - 1)) * 200);
+      fk.setAttribute("visibility", "visible");
+    });
+    el.addEventListener("pointerleave", () => {
+      label.textContent = normal;
+      el.querySelector(".fk").setAttribute("visibility", "hidden");
+    });
+  });
+}
+
+function sparkline(m, position) {
+  const werte = m.verlauf.map((v) => v.kurs);
+  if (werte.length < 2) return `<svg viewBox="0 0 200 52"></svg>`;
+  const bezug = [m.vortag_schluss].concat(position ? [position.einstandskurs] : []);
+  let min = Math.min(...werte, ...bezug), max = Math.max(...werte, ...bezug);
+  if (max - min < 1e-9) { min -= 1; max += 1; }
+  const x = (i) => (i / (werte.length - 1)) * 200;
+  const y = (v) => 48 - ((v - min) / (max - min)) * 44;
+  const d = werte.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  const kauf = position
+    ? `<line x1="0" x2="200" y1="${y(position.einstandskurs)}" y2="${y(position.einstandskurs)}" stroke="var(--text-secondary)" stroke-width="1.5" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"><title>Kaufkurs</title></line>`
+    : "";
+  const punkte = esc(JSON.stringify(m.verlauf));
+  return `<svg viewBox="0 0 200 52" preserveAspectRatio="none" data-punkte="${punkte}" aria-label="Kursverlauf heute">
+    <line x1="0" x2="200" y1="${y(m.vortag_schluss)}" y2="${y(m.vortag_schluss)}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"/>
+    ${kauf}
+    <path d="${d}" fill="none" stroke="var(--series-1)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <line class="fk" y1="0" y2="52" stroke="var(--text-muted)" stroke-width="1" vector-effect="non-scaling-stroke" visibility="hidden"/>
+  </svg>`;
+}
+
+// ---------- Knöpfe ----------
+$("bot-knopf").addEventListener("click", async () => {
+  if (!letzterStatus) return;
+  $("bot-knopf").disabled = true;
+  await api(letzterStatus.bot_laeuft ? "/api/bot/stop" : "/api/bot/start", "POST");
+  setTimeout(statusLaden, 800);
+});
+
+$("reset-knopf").addEventListener("click", async () => {
+  if (!confirm("Wirklich alles zurücksetzen? Alle Spielgeld-Trades und der Verlauf werden gelöscht.")) return;
+  await api("/api/zuruecksetzen", "POST");
+  statusLaden();
+});
+
+$("beenden-knopf").addEventListener("click", async () => {
+  if (!confirm("Bot und Webseite wirklich beenden? Der Bot handelt dann nicht mehr, bis du START doppelklickst oder den PC neu startest (bei Autostart).")) return;
+  await api("/api/beenden", "POST");
+  document.body.innerHTML = `<div class="seite"><div class="karte" style="margin-top:40px"><h2>Bot und Webseite sind beendet.</h2>
+    <p class="hinweis">Neu starten: Doppelklick auf <strong>START</strong> im Ordner „Etfs und Aktien“, oder den PC neu starten, wenn der Autostart an ist.</p></div></div>`;
+});
+
+$("motoren").addEventListener("click", async (ev) => {
+  const knopf = ev.target.closest("[data-motor]");
+  if (!knopf) return;
+  knopf.disabled = true;
+  await api(`/api/motor?motor=${encodeURIComponent(knopf.dataset.motor)}`, "POST");
+  statusLaden();
+});
+
+// ---------- Backtest ----------
+let backtestTimer = null;
+let btMotor = "vorsichtig";
+let btErgebnisse = {};
+function btMotorenZeigen(motoren) {
+  const zeitraum = { vorsichtig: "2 Jahre", schnell: "60 Tage" };
+  $("bt-motoren").innerHTML = motoren.map((mo) =>
+    `<button class="chip" data-bt-motor="${esc(mo.name)}" aria-pressed="${mo.name === btMotor}">${esc(mo.titel)}${zeitraum[mo.name] ? `<span class="anzahl">${zeitraum[mo.name]}</span>` : ""}</button>`).join("");
+}
+$("bt-motoren").addEventListener("click", (ev) => {
+  const chip = ev.target.closest("[data-bt-motor]");
+  if (!chip) return;
+  btMotor = chip.dataset.btMotor;
+  if (letzterStatus) btMotorenZeigen(letzterStatus.einstellungen.motoren);
+  if (btErgebnisse[btMotor]) backtestZeigen(btErgebnisse[btMotor]);
+  else $("backtest-ergebnis").hidden = true;
+});
+$("backtest-knopf").addEventListener("click", async () => {
+  await api(`/api/backtest?motor=${encodeURIComponent(btMotor)}`, "POST");
+  backtestStatusAnzeigen({ laeuft: true });
+  backtestAbfragen();
+});
+
+function backtestStatusAnzeigen(b) {
+  $("backtest-knopf").disabled = b.laeuft;
+  $("backtest-status").innerHTML = b.laeuft ? `<span class="lade"></span>Lade Kurse und rechne …` : b.fehler ? `Fehler: ${esc(b.fehler)}` : "";
+}
+
+async function backtestAbfragen() {
+  clearTimeout(backtestTimer);
+  const b = await api("/api/backtest");
+  backtestStatusAnzeigen(b);
+  if (b.laeuft) { backtestTimer = setTimeout(backtestAbfragen, 1500); return; }
+  btErgebnisse = b.ergebnisse || {};
+  vergleichZeigen();
+  if (b.motor && btErgebnisse[b.motor]) {
+    btMotor = b.motor;
+    if (letzterStatus) btMotorenZeigen(letzterStatus.einstellungen.motoren);
+    backtestZeigen(btErgebnisse[b.motor]);
+  }
+}
+
+function vergleichZeigen() {
+  const liste = Object.values(btErgebnisse);
+  $("bt-vergleich-karte").hidden = liste.length === 0;
+  if (!liste.length) return;
+  $("bt-vergleich").innerHTML = `<table><thead><tr><th>Motor</th><th>Zeitraum</th><th class="zahl">Ergebnis Bot</th><th class="zahl">Kaufen &amp; halten</th><th class="zahl">Trades</th><th class="zahl">mit Gewinn</th><th class="zahl">Gebühren</th><th class="zahl">Größter Rückgang</th></tr></thead><tbody>` +
+    liste.map((e) => {
+      const bot = e.endwert - e.startkapital, halten = e.halten_endwert - e.startkapital;
+      return `<tr><td><strong>${esc(e.motor_titel)}</strong></td><td>${esc(e.von)} – ${esc(e.bis)}<br><span style="color:var(--text-muted);font-size:12px">${e.handelstage} Handelstage</span></td>
+        <td class="zahl">${tendenz(bot, vorzeichen(bot))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(bot / e.startkapital)}</span></td>
+        <td class="zahl">${tendenz(halten, vorzeichen(halten))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(halten / e.startkapital)}</span></td>
+        <td class="zahl">${e.trades}</td><td class="zahl">${e.trades ? Math.round((e.gewinn_trades / e.trades) * 100) : 0} %</td>
+        <td class="zahl">${eur.format(e.gebuehren)}</td><td class="zahl">−${(e.max_rueckgang * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 })} %</td></tr>`;
+    }).join("") + `</tbody></table>`;
+}
+
+function backtestZeigen(e) {
+  $("backtest-ergebnis").hidden = false;
+  $("bt-titel").textContent = `${e.motor_titel}: Bot vs. einfach kaufen und halten`;
+  const bot = e.endwert - e.startkapital, halten = e.halten_endwert - e.startkapital;
+  const quote = e.trades ? Math.round((e.gewinn_trades / e.trades) * 100) : 0;
+  const kachel = (titel, wert, unter) => `<div class="kachel"><div class="titel">${titel}</div><div class="wert">${wert}</div><div class="unter">${unter}</div></div>`;
+  $("bt-kacheln").innerHTML =
+    kachel("Ergebnis Bot", tendenz(bot, vorzeichen(bot)), prozent.format(bot / e.startkapital)) +
+    kachel("Nur kaufen &amp; halten", tendenz(halten, vorzeichen(halten)), prozent.format(halten / e.startkapital)) +
+    kachel("Trades", e.trades, `${e.gewinn_trades} mit Gewinn (${quote} %)`) +
+    kachel("Bezahlte Gebühren", eur.format(e.gebuehren), `Ø Gewinn ${vorzeichen(e.avg_gewinn)} · Ø Verlust ${vorzeichen(e.avg_verlust)}`) +
+    kachel("Größter Rückgang", prozent.format(-e.max_rueckgang).replace("+", ""), `Tiefster Wert ${eur.format(e.tiefster_wert)}`);
+  $("bt-zeitraum").textContent = `Zeitraum ${e.von} bis ${e.bis} (${e.handelstage} Handelstage), Startkapital ${eur.format(e.startkapital)}. Steuern nicht eingerechnet. Vergangene Ergebnisse sind keine Garantie für die Zukunft.`;
+
+  linienChart("chart-backtest", {
+    zeiten: e.kurve.map((k) => k.zeit),
+    serien: [
+      { name: "Bot", kurz: "Bot", farbe: "--series-1", werte: e.kurve.map((k) => k.bot) },
+      { name: "Kaufen & halten", kurz: "Halten", farbe: "--series-2", werte: e.kurve.map((k) => k.halten) },
+    ],
+    referenz: e.startkapital,
+  });
+
+  const tage = {};
+  e.kurve.forEach((k) => (tage[k.zeit.slice(0, 10)] = k));
+  $("bt-tabelle").innerHTML = `<table><thead><tr><th>Tag</th><th class="zahl">Bot</th><th class="zahl">Kaufen &amp; halten</th></tr></thead><tbody>` +
+    Object.entries(tage).map(([t, k]) => `<tr><td>${esc(zeitKurz(t).trim())}</td><td class="zahl">${eur.format(k.bot)}</td><td class="zahl">${eur.format(k.halten)}</td></tr>`).join("") +
+    `</tbody></table>`;
+  $("bt-trades").innerHTML = tradesTabelle([...e.letzte_trades].reverse());
+}
+
+// ---------- Start ----------
+try { const a = localStorage.getItem("ansicht"); if (a && $(a)) zeigeAnsicht(a); } catch (e) {}
+statusLaden();
+backtestAbfragen();
+setInterval(statusLaden, CLOUD ? 60000 : 10000);
+</script>
+</body>
+</html>

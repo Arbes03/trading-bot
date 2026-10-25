@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+bot.log
+bot.log.alt
+public/
+.claude/
