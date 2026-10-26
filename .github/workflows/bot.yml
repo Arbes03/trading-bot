@@ -26,9 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          ref: main # immer den neuesten Stand, auch wenn der Lauf in der Warteschlange stand
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
@@ -56,7 +58,11 @@ jobs:
           done
           if ! git diff --cached --quiet; then
             git commit -m "Bot-Runde $(date -u '+%Y-%m-%d %H:%M') UTC"
-            git push
+            # Falls inzwischen jemand anderes etwas hochgeladen hat: neuesten Stand holen, dann erneut versuchen
+            for versuch in 1 2 3; do
+              git pull --rebase -X theirs origin main && git push && break
+              sleep 5
+            done
           fi
 
       - uses: actions/upload-pages-artifact@v3
