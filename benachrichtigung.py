@@ -170,6 +170,15 @@ def trade_melden(trade: dict, depotwert: float):
                tags=["chart_with_upwards_trend" if gewinn > 0 else "chart_with_downwards_trend"])
 
 
+def notbremse_melden(pausiert: dict, depotwert: float):
+    senden("🚨 NOTBREMSE: Bot hat alles verkauft",
+           f"{pausiert['grund']}.\n\nDer Bot hat alle Aktien verkauft und kauft nichts mehr, bis du ihn wieder freigibst.\n"
+           f"Depot jetzt: {eur(depotwert)} (alles Bargeld).\n\n"
+           "Freigeben: Im GitHub-Projekt eine leere Datei notbremse_aufheben.txt anlegen "
+           "(Add file → Create new file → Commit). Der Bot hebt die Pause dann auf.",
+           tags=["rotating_light"], prioritaet=5)
+
+
 def willkommen_melden(status: dict, wege: str) -> bool:
     e = status["ergebnis"]
     investiert = sum(p["investiert"] for p in status["positionen"])

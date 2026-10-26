@@ -9,7 +9,7 @@ on:
   workflow_dispatch: # zum Ausprobieren: Actions -> Trading-Bot -> "Run workflow"
   push: # neuer Code -> Webseite sofort aktualisieren (Bot-Speicherungen lösen das nicht aus)
     branches: [main]
-    paths: ["**.py", "web/**", ".github/workflows/**", "motor.txt", "test.txt"] # test.txt ändern = Testlauf
+    paths: ["**.py", "web/**", ".github/workflows/**", "motor.txt", "test.txt", "notbremse_aufheben.txt"]
 
 permissions:
   contents: write
@@ -56,6 +56,8 @@ jobs:
           for datei in depot.json trades.csv verlauf.csv protokoll.json benachrichtigung.json; do
             [ -f "$datei" ] && git add "$datei"
           done
+          # Freigabe-Datei nach dem Aufheben der Notbremse wieder entfernen
+          git add -A notbremse_aufheben.txt 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Bot-Runde $(date -u '+%Y-%m-%d %H:%M') UTC"
             # Falls inzwischen jemand anderes etwas hochgeladen hat: neuesten Stand holen, dann erneut versuchen

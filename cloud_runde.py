@@ -12,7 +12,8 @@ from datetime import datetime
 
 import benachrichtigung
 import config
-from benachrichtigung import eingerichtet, tagesabschluss_melden, trade_melden, willkommen_melden
+from benachrichtigung import (eingerichtet, notbremse_melden, senden, tagesabschluss_melden, trade_melden,
+                              willkommen_melden)
 from bot import ZONE, boerse_offen, runde
 from handel import uhrzeit
 from daten import fuer_alle, marktueberblick
@@ -20,6 +21,7 @@ from depot import Depot, verlauf_lesen
 from strategie import aktiver_motor
 from uebersicht import status_bauen
 
+FREIGABE_DATEI = "notbremse_aufheben.txt"
 PROTOKOLL_DATEI = "protokoll.json"
 PROTOKOLL_MAX = 200
 AUSGABE_ORDNER = "public"
@@ -48,6 +50,16 @@ def main():
         protokoll.insert(0, {"zeit": f"{jetzt:%d.%m. %H:%M}", "text": text})
         print(text)
 
+    # Freigabe nach der Notbremse: Datei notbremse_aufheben.txt bei GitHub anlegen
+    if os.path.exists(FREIGABE_DATEI):
+        os.remove(FREIGABE_DATEI)
+        if depot.pausiert:
+            depot.pausiert = None
+            depot.speichern()
+            melden("Notbremse aufgehoben, der Bot handelt wieder.")
+            senden("✅ Notbremse aufgehoben", "Der Bot handelt ab jetzt wieder nach seinen Regeln.",
+                   tags=["white_check_mark"])
+
     kurse: dict[str, float] = {}
     if boerse_offen(jetzt):
         motor = aktiver_motor()
@@ -56,7 +68,9 @@ def main():
             melden(m)
         melden(f"Prüfrunde fertig ({motor.titel}): Depot {depot.gesamtwert(kurse):,.2f} EUR, "
                f"Kurse für {anzahl}/{len(config.WATCHLIST)} Werte")
-        if config.NACHRICHT_BEI_TRADES:
+        if any(m.startswith("NOTBREMSE") for m in meldungen):
+            notbremse_melden(depot.pausiert, depot.gesamtwert(kurse))  # eine Sammelmeldung statt vieler
+        elif config.NACHRICHT_BEI_TRADES:
             for trade in depot.trades:  # nur die Trades dieser Runde
                 trade_melden(trade, depot.gesamtwert(kurse))
     else:
@@ -81,6 +95,7 @@ def main():
         autostart=False,
         backtest={"laeuft": False, "motor": None, "fehler": None},
         cloud=True,
+        pausiert=depot.pausiert,
     )
     os.makedirs(AUSGABE_ORDNER, exist_ok=True)
     with open(os.path.join(AUSGABE_ORDNER, "status.json"), "w", encoding="utf-8") as f:

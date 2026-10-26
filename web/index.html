@@ -159,6 +159,14 @@
     .ergebnis-teile { grid-template-columns: 1fr; }
   }
 
+  .notbremse {
+    border: 2px solid var(--critical); background: color-mix(in srgb, var(--critical) 12%, var(--surface-1));
+    border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; font-size: 14px;
+  }
+  .notbremse[hidden] { display: none; }
+  .notbremse-titel { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .notbremse code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
   .karte { padding: 16px; margin-bottom: 16px; }
   .karte h2 { font-size: 16px; margin: 0 0 4px; }
   .karte .hinweis { font-size: 13px; color: var(--text-muted); margin: 0 0 12px; }
@@ -303,6 +311,14 @@
 
   <!-- ÜBERSICHT -->
   <section class="ansicht" id="uebersicht">
+    <div class="notbremse" id="notbremse" role="alert" hidden>
+      <div class="notbremse-titel">🚨 Notbremse aktiv: Der Bot hat alles verkauft und handelt nicht mehr</div>
+      <div id="notbremse-grund"></div>
+      <div class="nur-lokal" style="margin-top:10px"><button id="notbremse-knopf" class="haupt">Notbremse aufheben, Bot handelt wieder</button></div>
+      <div class="nur-cloud" style="margin-top:8px">Freigeben: Im GitHub-Projekt auf <strong>Add file → Create new file</strong> klicken,
+        als Namen <code>notbremse_aufheben.txt</code> eintragen (Inhalt egal) und <strong>Commit changes</strong> klicken.
+        Der Bot hebt die Pause dann auf und meldet sich in Telegram.</div>
+    </div>
     <div class="ergebnis" id="ergebnis" aria-live="polite">
       <div>
         <div class="ergebnis-label"><span class="symbol" id="e-symbol">●</span><span id="e-label">Lade …</span></div>
@@ -651,6 +667,9 @@ async function statusLaden() {
   knopf.classList.toggle("haupt", !s.bot_laeuft);
 
   ergebnisZeigen(s);
+  const nb = s.notbremse || {};
+  $("notbremse").hidden = !nb.aktiv;
+  $("notbremse-grund").textContent = nb.aktiv ? `Ausgelöst am ${zeitKurz(nb.seit)} Uhr: ${nb.grund}.` : "";
   $("k-wert").textContent = eur.format(s.depotwert);
   $("k-wert-unter").textContent = `Start: ${eur.format(s.startkapital)}`;
   const investiert = s.positionen.reduce((summe, p) => summe + p.wert, 0);
@@ -711,6 +730,7 @@ async function statusLaden() {
     ...(m.sperre_stunden ? [`Nach einem Verkauf wird dieselbe Aktie <strong>${m.sperre_stunden} Stunden</strong> nicht wieder gekauft`] : []),
     `Höchstens <strong>${pz(m.max_anteil || e.max_anteil)}</strong> des Depots pro Aktie, höchstens <strong>${m.max_positionen || e.max_positionen}</strong> Positionen gleichzeitig`,
     `Ab <strong>−${pz(e.tages_limit)}</strong> an einem Tag keine neuen Käufe mehr`,
+    ...(s.notbremse && s.notbremse.prozent ? [`🚨 <strong>Notbremse:</strong> Fällt das Depot unter <strong>${eur.format(s.notbremse.grenze)}</strong> (−${pz(s.notbremse.prozent)} vom Startkapital), verkauft der Bot alles und pausiert, bis du ihn freigibst`] : []),
     `Kosten: <strong>${eur.format(e.gebuehr)}</strong> Gebühr pro Order plus Spread`,
     `Handelszeit: <strong>${esc(e.boerse)} Uhr</strong>, geprüft wird alle ${Math.round(m.pruef_abstand / 60)} Minuten`,
   ].map((t) => `<li>${t}</li>`).join("");
@@ -934,6 +954,12 @@ $("bot-knopf").addEventListener("click", async () => {
 $("reset-knopf").addEventListener("click", async () => {
   if (!confirm("Wirklich alles zurücksetzen? Alle Spielgeld-Trades und der Verlauf werden gelöscht.")) return;
   await api("/api/zuruecksetzen", "POST");
+  statusLaden();
+});
+
+$("notbremse-knopf").addEventListener("click", async () => {
+  if (!confirm("Notbremse aufheben? Der Bot kauft danach wieder Aktien.")) return;
+  await api("/api/notbremse_aufheben", "POST");
   statusLaden();
 });
 

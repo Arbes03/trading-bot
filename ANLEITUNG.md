@@ -47,6 +47,18 @@ Kosten: 0 €. Du brauchst nur ein kostenloses GitHub-Konto.
 
 Gut zu wissen: GitHub startet geplante Läufe manchmal ein paar Minuten zu spät. Für diesen Bot ist das egal.
 
+### Notbremse
+
+Fällt das Depot **5 % unter das Startkapital** (unter 9.500 €), verkauft der Bot **alles** und **pausiert**:
+Er kauft nichts mehr, bis du ihn freigibst. Du bekommst dazu eine Telegram-Nachricht, und die Webseite zeigt einen roten Hinweis.
+
+**Freigeben:** Im GitHub-Projekt auf *Add file → Create new file*, Name `notbremse_aufheben.txt` (Inhalt egal), *Commit changes*.
+Der Bot hebt die Pause beim nächsten Lauf auf, löscht die Datei wieder und meldet sich in Telegram.
+Die Grenze stellst du in `config.py` bei `NOTBREMSE_AB` ein (`None` = aus).
+
+Im Backtest hätte die Notbremse den Verlust des schnellen Motors von −38 % auf −5 % begrenzt;
+beim vorsichtigen Motor hat sie in den letzten 2 Jahren nie ausgelöst.
+
 ### Nachrichten aufs Handy (Telegram)
 
 Der Bot schickt bei jedem Kauf und Verkauf eine Nachricht und jeden Handelstag nach Börsenschluss einen Tagesabschluss.

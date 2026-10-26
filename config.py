@@ -75,6 +75,7 @@ SPREAD = 0.0005           # 0,05 % Unterschied zwischen Kauf- und Verkaufskurs
 MAX_ANTEIL_PRO_POSITION = 0.20  # höchstens 20 % des Depotwerts pro Aktie
 MAX_POSITIONEN = 5
 TAGES_VERLUST_LIMIT = 0.03      # ab -3 % an einem Tag: keine neuen Käufe mehr
+NOTBREMSE_AB = 0.05             # Depot 5 % unter Startkapital: alles verkaufen und pausieren (None = aus)
 
 # --- Strategie-Motoren ---
 # Der Bot handelt mit einem Motor. Umschalten geht auf der Webseite (Strategie & Einstellungen).

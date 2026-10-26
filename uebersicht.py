@@ -13,7 +13,7 @@ VERLAUF_PUNKTE = 600
 
 def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list, protokoll: list, *,
                  bot_laeuft: bool, letzte_runde: str | None, autostart: bool, backtest: dict,
-                 cloud: bool = False) -> dict:
+                 cloud: bool = False, pausiert: dict | None = None) -> dict:
     positionen = []
     for ticker, pos in positionen_roh.items():
         kurs = kurse.get(ticker) or pos["einstandskurs"]
@@ -49,6 +49,13 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         "cloud": cloud,
         "bot_laeuft": bot_laeuft,
         "autostart": autostart,
+        "notbremse": {
+            "aktiv": bool(pausiert),
+            "seit": pausiert["seit"] if pausiert else None,
+            "grund": pausiert["grund"] if pausiert else None,
+            "grenze": config.STARTKAPITAL * (1 - config.NOTBREMSE_AB) if config.NOTBREMSE_AB else None,
+            "prozent": config.NOTBREMSE_AB,
+        },
         "boerse_offen": boerse_offen(jetzt),
         "letzte_runde": letzte_runde,
         "startkapital": config.STARTKAPITAL,

@@ -9,7 +9,7 @@ from datetime import datetime
 import config
 from daten import fuer_alle, kurse_laden
 from depot import Depot
-from handel import kaeufe_erlaubt, ticker_pruefen
+from handel import kaeufe_erlaubt, notbremse_pruefen, ticker_pruefen
 from strategie import Motor, motor_laden, reihenfolge
 
 KURVEN_PUNKTE = 600  # so viele Punkte bekommt die Kurve höchstens
@@ -50,14 +50,18 @@ def backtest_ausfuehren(motor: Motor, ab: datetime | None = None, daten: dict | 
             i = positionen[ticker].get(zeit)
             if i is not None and i >= motor.aufwaermen:
                 jetzt_da[ticker] = i
-        for ticker in reihenfolge({t: daten[t][i] for t, i in jetzt_da.items()}, depot.positionen, motor):
-            kerzen, i = daten[ticker], jetzt_da[ticker]
-            kurs = kerzen[i]["close"]
-            kurse[ticker] = kurs
-            startkurse.setdefault(ticker, kurs)
-            depotwert = depot.gesamtwert(kurse)
-            ticker_pruefen(depot, motor, ticker, kerzen[i], kerzen[i - 1], kurs, zeit,
-                           kaeufe_erlaubt(zeit, depotwert, tagesstart, motor), depotwert)
+        for ticker, i in jetzt_da.items():
+            kurse[ticker] = daten[ticker][i]["close"]
+            startkurse.setdefault(ticker, kurse[ticker])
+
+        # Notbremse aktiv: nur noch Kurse mitschreiben (für die Vergleichskurve), nicht mehr handeln
+        if not depot.pausiert:
+            for ticker in reihenfolge({t: daten[t][i] for t, i in jetzt_da.items()}, depot.positionen, motor):
+                kerzen, i = daten[ticker], jetzt_da[ticker]
+                depotwert = depot.gesamtwert(kurse)
+                ticker_pruefen(depot, motor, ticker, kerzen[i], kerzen[i - 1], kurse[ticker], zeit,
+                               kaeufe_erlaubt(zeit, depotwert, tagesstart, motor), depotwert)
+            notbremse_pruefen(depot, kurse, zeit)
 
         if not startkurse:
             continue
@@ -97,6 +101,7 @@ def backtest_ausfuehren(motor: Motor, ab: datetime | None = None, daten: dict | 
         "max_rueckgang": max_rueckgang,
         "kurve": kurve[::schritt] + ([kurve[-1]] if (len(kurve) - 1) % schritt else []),
         "letzte_trades": depot.trades[-50:],
+        "notbremse": depot.pausiert,  # None = nicht ausgelöst
     }
 
 
@@ -132,6 +137,9 @@ def main():
     for titel, e in zeilen + lang:
         print(zeile(titel, e))
     print("=" * 128)
+    for titel, e in zeilen + lang:
+        if e["notbremse"]:
+            print(f" Notbremse bei \"{titel}\" ausgelöst am {e['notbremse']['seit']}: {e['notbremse']['grund']}")
     print(" Quote = Anteil der Trades mit Gewinn. Rückgang = größter Verlust vom Höchststand.")
     print(" Steuern (ca. 26 % auf Gewinne) sind nicht eingerechnet. Vergangenheit garantiert nichts.")
 

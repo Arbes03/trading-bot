@@ -18,6 +18,27 @@ def kaeufe_erlaubt(zeit, depotwert: float, tagesstart: float, motor: Motor) -> b
     return depotwert > tagesstart * (1 - config.TAGES_VERLUST_LIMIT)
 
 
+def notbremse_pruefen(depot: Depot, kurse: dict[str, float], zeit) -> str | None:
+    """Fällt das Depot zu weit unter das Startkapital: alles verkaufen und pausieren.
+
+    Gibt eine Meldung zurück, wenn die Notbremse gerade ausgelöst wurde.
+    """
+    if not config.NOTBREMSE_AB or depot.pausiert:
+        return None
+    wert = depot.gesamtwert(kurse)
+    grenze = config.STARTKAPITAL * (1 - config.NOTBREMSE_AB)
+    if wert > grenze:
+        return None
+    for ticker in list(depot.positionen):
+        depot.verkaufen(ticker, kurse.get(ticker, depot.positionen[ticker]["einstandskurs"]), zeit, "Notbremse")
+    depot.pausiert = {
+        "seit": str(zeit)[:16],
+        "grund": f"Depot bei {wert:,.2f} EUR, unter der Grenze von {grenze:,.2f} EUR "
+                 f"(-{config.NOTBREMSE_AB:.0%} vom Startkapital)",
+    }
+    return f"NOTBREMSE: alles verkauft, Bot pausiert. {depot.pausiert['grund']}"
+
+
 def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorletzte: dict,
                    kurs: float, zeit, darf_kaufen: bool, depotwert: float) -> str | None:
     """Prüft eine Aktie und handelt, falls nötig. Gibt eine Meldung zurück, wenn gehandelt wurde."""

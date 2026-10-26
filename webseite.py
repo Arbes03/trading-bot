@@ -97,6 +97,7 @@ def status() -> dict:
         letzte_runde=f"{bot.letzte_runde:%H:%M}" if bot.letzte_runde else None,
         autostart=os.path.exists(AUTOSTART_VERKNUEPFUNG),
         backtest={k: _backtest[k] for k in ("laeuft", "motor", "fehler")},
+        pausiert=depot.pausiert,
     )
 
 
@@ -163,6 +164,11 @@ class Anfrage(BaseHTTPRequestHandler):
             melden(f"Motor gewechselt: {config.MOTOREN[name]['titel']}. Gilt ab der nächsten Prüfrunde.")
         elif teile.path == "/api/zuruecksetzen":
             zuruecksetzen()
+        elif teile.path == "/api/notbremse_aufheben":
+            with sperre:
+                depot.pausiert = None
+                depot.speichern()
+            melden("Notbremse aufgehoben, der Bot handelt wieder.")
         elif teile.path == "/api/beenden":
             melden("Bot und Webseite werden beendet.")
             threading.Thread(target=server.shutdown, daemon=True).start()

@@ -19,6 +19,7 @@ class Depot:
         self.trades: list[dict] = []
         self.letzte_verkaeufe: dict[str, str] = {}      # ticker -> Zeitpunkt des letzten Verkaufs
         self.kaeufe_heute = {"tag": "", "anzahl": 0}
+        self.pausiert: dict | None = None  # Notbremse: {"seit": ..., "grund": ...}
         if datei and os.path.exists(datei):
             with open(datei, encoding="utf-8") as f:
                 daten = json.load(f)
@@ -26,6 +27,7 @@ class Depot:
             self.positionen = daten["positionen"]
             self.letzte_verkaeufe = daten.get("letzte_verkaeufe", {})
             self.kaeufe_heute = daten.get("kaeufe_heute", self.kaeufe_heute)
+            self.pausiert = daten.get("pausiert")
 
     def darf_kaufen(self, ticker: str, zeit: datetime, motor) -> bool:
         """Bremsen des Motors: Sperre nach Verkauf und Höchstzahl Käufe pro Tag."""
@@ -93,6 +95,7 @@ class Depot:
         self.trades = []
         self.letzte_verkaeufe = {}
         self.kaeufe_heute = {"tag": "", "anzahl": 0}
+        self.pausiert = None
         for datei in (self.trades_datei, config.VERLAUF_DATEI):
             if datei and os.path.exists(datei):
                 os.remove(datei)
@@ -103,7 +106,8 @@ class Depot:
             return
         with open(self.datei, "w", encoding="utf-8") as f:
             json.dump({"bargeld": self.bargeld, "positionen": self.positionen,
-                       "letzte_verkaeufe": self.letzte_verkaeufe, "kaeufe_heute": self.kaeufe_heute},
+                       "letzte_verkaeufe": self.letzte_verkaeufe, "kaeufe_heute": self.kaeufe_heute,
+                       "pausiert": self.pausiert},
                       f, indent=2, ensure_ascii=False)
 
     def _protokollieren(self, zeit, art, ticker, stueck, kurs, grund, gewinn):
