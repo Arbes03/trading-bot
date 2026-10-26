@@ -669,9 +669,13 @@ async function statusLaden() {
   }
 
   $("positionen").innerHTML = s.positionen.length
-    ? `<table><thead><tr><th>Wert</th><th class="zahl">Stück</th><th class="zahl">Kaufkurs</th><th class="zahl">Aktuell</th><th class="zahl">Gewinn</th></tr></thead><tbody>` +
-      s.positionen.map((p) => `<tr><td>${esc(p.name)}</td><td class="zahl">${p.stueck}</td><td class="zahl">${eur.format(p.einstandskurs)}</td>
-        <td class="zahl">${eur.format(p.kurs)}</td><td class="zahl">${tendenz(p.gewinn, vorzeichen(p.gewinn))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(p.prozent)}</span></td></tr>`).join("") +
+    ? `<table><thead><tr><th>Wert</th><th class="zahl">Investiert</th><th class="zahl">Jetzt wert</th><th class="zahl">Gewinn / Verlust</th></tr></thead><tbody>` +
+      s.positionen.map((p) => `<tr><td><strong>${esc(p.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${p.stueck} Stk. zu ${eur.format(p.einstandskurs)}</span></td>
+        <td class="zahl"><strong>${eur.format(p.investiert)}</strong></td><td class="zahl">${eur.format(p.wert)}</td>
+        <td class="zahl">${tendenz(p.gewinn, vorzeichen(p.gewinn))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(p.prozent)}</span></td></tr>`).join("") +
+      `<tr class="summe"><td>Summe</td><td class="zahl">${eur.format(s.positionen.reduce((x, p) => x + p.investiert, 0))}</td>
+        <td class="zahl">${eur.format(s.positionen.reduce((x, p) => x + p.wert, 0))}</td>
+        <td class="zahl">${tendenz(s.ergebnis.offen, vorzeichen(s.ergebnis.offen))}</td></tr>` +
       `</tbody></table>`
     : `<div class="leer">Keine offenen Positionen.</div>`;
 
@@ -855,8 +859,11 @@ function marktZeigen(s) {
       <div class="tag">${tendenz(m.veraenderung * 100, prozent.format(m.veraenderung))} seit Vortag</div>
       ${sparkline(m, p)}
       <div class="fuss"><span data-hover title="Richtung der letzten ca. 1–2 Stunden – darauf reagiert der Bot">Kurztrend ${pfeil}</span><span title="Unter 30: stark gefallen, über 70: stark gestiegen (überkauft)">RSI ${Math.round(m.rsi)}</span></div>
-      ${p ? `<div class="position">${p.stueck} Stk. zu ${eur.format(p.einstandskurs)} · ${tendenz(p.gewinn, vorzeichen(p.gewinn))}
-        <div class="klein">${prozent.format(p.prozent)} · gekauft ${esc(zeitKurz(p.kaufzeit))} Uhr · Wert ${eur.format(p.wert)}</div></div>` : ""}
+      ${p ? `<div class="position">
+        <div style="display:flex;justify-content:space-between;gap:8px"><span>Investiert</span><strong>${eur.format(p.investiert)}</strong></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span>Jetzt wert</span><span>${eur.format(p.wert)}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span>Gewinn / Verlust</span>${tendenz(p.gewinn, `${vorzeichen(p.gewinn)} (${prozent.format(p.prozent)})`)}</div>
+        <div class="klein">${p.stueck} Stk. zu ${eur.format(p.einstandskurs)} · gekauft ${esc(zeitKurz(p.kaufzeit))} Uhr</div></div>` : ""}
     </div>`;
   }).join("");
 
