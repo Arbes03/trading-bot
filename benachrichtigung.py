@@ -81,7 +81,7 @@ def telegram_senden(titel: str, text: str) -> bool:
         # Fehlertext von Telegram ausgeben, aber nie die Adresse (sie enthält den Schlüssel)
         beschreibung = json.loads(fehler.read() or b"{}").get("description", "")
         _fehler(f"Telegram-Nachricht abgelehnt ({fehler.code}): {beschreibung}. "
-                "Tipp: Hast du deinem Bot schon einmal /start geschrieben? Stimmen Token und Chat-ID?")
+                f"{telegram_pruefen(token, chat_id)}")
     except Exception as fehler:
         hinweis = ""
         if not token.split(":")[0].isdigit() or ":" not in token:
@@ -90,6 +90,27 @@ def telegram_senden(titel: str, text: str) -> bool:
             hinweis += " Die Chat-ID sollte nur aus Ziffern bestehen."
         _fehler(f"Telegram-Nachricht konnte nicht gesendet werden: {type(fehler).__name__}.{hinweis}")
     return False
+
+
+def telegram_pruefen(token: str, chat_id: str) -> str:
+    """Fehlersuche: Wie heißt der Bot, und wer hat ihm geschrieben? Gibt nur gekürzte Angaben zurück."""
+    def abfragen(methode: str):
+        with urllib.request.urlopen(f"https://api.telegram.org/bot{token}/{methode}", timeout=20) as antwort:
+            return json.load(antwort).get("result")
+    try:
+        bot = abfragen("getMe") or {}
+        chats = {str(u[k]["chat"]["id"]) for u in abfragen("getUpdates") or []
+                 for k in ("message", "my_chat_member") if k in u}
+    except Exception as fehler:
+        return f"Prüfung nicht möglich ({type(fehler).__name__})."
+    gekuerzt = ", ".join(f"…{c[-3:]}" for c in sorted(chats)) or "niemand"
+    if not chats:
+        return (f"Bot @{bot.get('username')}: Ihm hat in den letzten 24 Stunden niemand geschrieben. "
+                "Bitte im Chat mit genau diesem Bot auf Start tippen.")
+    if chat_id in chats:
+        return f"Bot @{bot.get('username')}: Chat-ID passt zu einem Chat. Bitte nochmal versuchen."
+    return (f"Bot @{bot.get('username')}: Geschrieben haben ihm Chat-IDs {gekuerzt}, "
+            f"eingetragen ist …{chat_id[-3:]}. Die eingetragene Chat-ID passt nicht.")
 
 
 def whatsapp_senden(titel: str, text: str) -> bool:
