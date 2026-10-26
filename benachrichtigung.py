@@ -59,9 +59,14 @@ def senden(titel: str, text: str, tags: list[str] | None = None, prioritaet: int
     return telegram or whatsapp or ntfy
 
 
+def ohne_leerzeichen(wert: str) -> str:
+    """Entfernt Leerzeichen und Zeilenumbrüche, die beim Kopieren oft mitrutschen."""
+    return "".join(wert.split())
+
+
 def telegram_senden(titel: str, text: str) -> bool:
-    token = os.environ.get("TELEGRAM_TOKEN", "").strip()
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    token = ohne_leerzeichen(os.environ.get("TELEGRAM_TOKEN", ""))
+    chat_id = ohne_leerzeichen(os.environ.get("TELEGRAM_CHAT_ID", ""))
     if not (token and chat_id):
         return False
     inhalt = f"<b>{html.escape(titel)}</b>\n{html.escape(text)}\n\n{config.WEBSEITE_URL}"
@@ -78,7 +83,12 @@ def telegram_senden(titel: str, text: str) -> bool:
         _fehler(f"Telegram-Nachricht abgelehnt ({fehler.code}): {beschreibung}. "
                 "Tipp: Hast du deinem Bot schon einmal /start geschrieben? Stimmen Token und Chat-ID?")
     except Exception as fehler:
-        _fehler(f"Telegram-Nachricht konnte nicht gesendet werden: {type(fehler).__name__}")
+        hinweis = ""
+        if not token.split(":")[0].isdigit() or ":" not in token:
+            hinweis = " Der Token sieht unvollständig aus (Form: Zahl, Doppelpunkt, Buchstaben)."
+        if not chat_id.lstrip("-").isdigit():
+            hinweis += " Die Chat-ID sollte nur aus Ziffern bestehen."
+        _fehler(f"Telegram-Nachricht konnte nicht gesendet werden: {type(fehler).__name__}.{hinweis}")
     return False
 
 
