@@ -449,6 +449,11 @@
       <p class="hinweis">Diese Seite liegt bei GitHub. Der Bot läuft dort alle 15 Minuten (Mo–Fr während der Börsenzeit), auch wenn dein PC aus ist.
         Hier kannst du nur zuschauen. Motor wechseln oder Depot zurücksetzen geht über die Dateien im GitHub-Projekt (siehe Anleitung).</p>
     </div>
+    <div class="karte nur-cloud">
+      <h2>Handy-Nachrichten</h2>
+      <p class="zusammenfassung" id="nachrichten-text"></p>
+      <p class="hinweis" id="nachrichten-fehler" style="margin-top:6px"></p>
+    </div>
     <div class="karte nur-lokal">
       <h2>Rund um die Uhr laufen</h2>
       <p class="zusammenfassung" id="autostart-text"></p>
@@ -717,6 +722,14 @@ async function statusLaden() {
     </div>`;
   }).join("");
   btMotorenZeigen(e.motoren);
+  const n = s.nachrichten || {};
+  const nWege = n.eingerichtet && n.eingerichtet !== "keine" ? n.eingerichtet : "";
+  $("nachrichten-text").innerHTML = !nWege
+    ? "Noch nicht eingerichtet. Wie es geht, steht in der Anleitung (Abschnitt „Nachrichten aufs Handy“)."
+    : n.willkommen
+      ? `<span class="tendenz plus">Aktiv über ${esc(nWege)}</span>: bei jedem Kauf und Verkauf und jeden Abend ein Tagesabschluss.`
+      : `<span class="tendenz minus">Eingerichtet (${esc(nWege)}), aber noch keine Nachricht zugestellt.</span>`;
+  $("nachrichten-fehler").textContent = n.letzter_fehler && !n.willkommen ? `Letzte Meldung: ${n.letzter_fehler}` : "";
   $("autostart-text").innerHTML = s.autostart
     ? `<span class="tendenz plus">Autostart ist an</span>: Bot und Webseite starten nach jedem Hochfahren von selbst.`
     : `Autostart ist aus: Nach einem Neustart musst du <strong>START</strong> selbst doppelklicken.`;

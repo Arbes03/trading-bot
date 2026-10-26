@@ -86,4 +86,15 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
             "alles_verkaufen_ab": config.ALLES_VERKAUFEN_AB,
         },
         "backtest": backtest,
+        "nachrichten": nachrichten_status(),
     }
+
+
+def nachrichten_status() -> dict:
+    """Stand der Handy-Nachrichten aus benachrichtigung.json (enthält keine Zugangsdaten)."""
+    import json
+    import os
+    if not os.path.exists(config.BENACHRICHTIGUNG_DATEI):
+        return {}
+    with open(config.BENACHRICHTIGUNG_DATEI, encoding="utf-8") as f:
+        return json.load(f)
