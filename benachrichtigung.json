@@ -1,1 +1,1 @@
-{"tagesabschluss": "2026-10-26", "eingerichtet": "Telegram", "letzter_fehler": "26.10. 19:50: Telegram-Nachricht konnte nicht gesendet werden: InvalidURL"}
+{"tagesabschluss": "2026-10-26", "eingerichtet": "Telegram", "letzter_fehler": "26.10. 19:53: Telegram-Nachricht abgelehnt (401): Unauthorized. Tipp: Hast du deinem Bot schon einmal /start geschrieben? Stimmen Token und Chat-ID?"}
