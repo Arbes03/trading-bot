@@ -1,9 +1,17 @@
 {
-  "bargeld": 10000.0,
-  "positionen": {},
+  "bargeld": 8021.0656451892855,
+  "positionen": {
+    "DHL.DE": {
+      "stueck": 34,
+      "einstandskurs": 58.174539847373964,
+      "hoechstkurs": 58.174539847373964,
+      "kaufzeit": "2026-10-26 10:47:37.189570+01:00",
+      "kosten": 1978.9343548107147
+    }
+  },
   "letzte_verkaeufe": {},
   "kaeufe_heute": {
-    "tag": "",
-    "anzahl": 0
+    "tag": "2026-10-26",
+    "anzahl": 1
   }
 }
