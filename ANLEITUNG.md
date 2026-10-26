@@ -68,17 +68,23 @@ Token vergessen? Bei @BotFather `/mybots` → deinen Bot → **API Token**.
 | Motor | Wie er handelt |
 |---|---|
 | **Vorsichtig** (Standard) | Stundenkerzen, kauft nur in längeren Aufwärtstrends, darf über Nacht halten, höchstens 2 Käufe pro Tag, wenige Trades |
+| **Offensiv (Momentum)** | Stundenkerzen, kauft die stärksten Aufsteiger der letzten ca. 5 Tage, bis zu 33 % pro Aktie, höchstens 3 Positionen, Stop-Loss −3 % |
 | **Schnell (Daytrading)** | 5-Minuten-Kerzen, reagiert auf jede kleine Bewegung, verkauft abends alles, sehr viele Trades |
 
 Alle Zahlen stehen in `config.py`. Nach Änderungen immer zuerst einen Backtest machen (lokale Webseite → *Backtest*).
 
-Backtest-Ergebnisse (Stand Oktober 2026, ohne Steuern):
+Backtest-Ergebnisse (Stand 26.10.2026, ohne Steuern):
 
-| Motor | Zeitraum | Bot | Einfach kaufen & halten |
-|---|---|---|---|
-| Schnell | 60 Tage | −38,8 % | −2,1 % |
-| Vorsichtig | dieselben 60 Tage | −8,2 % | −2,2 % |
-| Vorsichtig | 2 Jahre | +13,5 % | +28,9 % |
+| Motor | Zeitraum | Bot | Einfach kaufen & halten | Größter Rückgang |
+|---|---|---|---|---|
+| Schnell | 60 Tage | −38,0 % | −1,2 % | 38,1 % |
+| Vorsichtig | dieselben 60 Tage | −8,9 % | −1,2 % | 10,3 % |
+| Offensiv | dieselben 60 Tage | −3,7 % | −1,2 % | 12,8 % |
+| Vorsichtig | 2 Jahre | +5,7 % | +31,7 % | 12,4 % |
+| Offensiv | 2 Jahre | +3,5 % | +31,7 % | 28,9 % |
+
+Die Ergebnisse reagieren empfindlich auf kleine Änderungen (z. B. ein paar Tage anderer Zeitraum oder die
+Reihenfolge, in der Käufe geprüft werden). Ein früherer Lauf ergab für „Vorsichtig“ über 2 Jahre noch +13,5 %.
 
 Vergangene Ergebnisse garantieren nichts für die Zukunft.
 

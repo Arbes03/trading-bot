@@ -10,7 +10,7 @@ import config
 from daten import fuer_alle, kurse_laden
 from depot import Depot
 from handel import kaeufe_erlaubt, ticker_pruefen
-from strategie import Motor, motor_laden
+from strategie import Motor, motor_laden, reihenfolge
 
 KURVEN_PUNKTE = 600  # so viele Punkte bekommt die Kurve höchstens
 
@@ -45,10 +45,13 @@ def backtest_ausfuehren(motor: Motor, ab: datetime | None = None, daten: dict | 
             tag = zeit.date()
             tagesstart = depot.gesamtwert(kurse)
 
+        jetzt_da = {}
         for ticker, kerzen in daten.items():
             i = positionen[ticker].get(zeit)
-            if i is None or i < motor.aufwaermen:
-                continue
+            if i is not None and i >= motor.aufwaermen:
+                jetzt_da[ticker] = i
+        for ticker in reihenfolge({t: daten[t][i] for t, i in jetzt_da.items()}, depot.positionen, motor):
+            kerzen, i = daten[ticker], jetzt_da[ticker]
             kurs = kerzen[i]["close"]
             kurse[ticker] = kurs
             startkurse.setdefault(ticker, kurs)
@@ -107,22 +110,27 @@ def zeile(titel: str, e: dict) -> str:
 
 
 def main():
-    schnell, vorsichtig = motor_laden("schnell"), motor_laden("vorsichtig")
     print("Lade Kursdaten (5-Minuten für 60 Tage, Stundenkerzen für 2 Jahre) ...")
-    e_schnell = backtest_ausfuehren(schnell)
-    daten_v = daten_laden(vorsichtig)
-    e_vorsichtig = backtest_ausfuehren(vorsichtig, daten=daten_v)
-    ab = datetime.strptime(e_schnell["kurve"][0]["zeit"], "%Y-%m-%d %H:%M").replace(tzinfo=daten_v[next(iter(daten_v))][0]["zeit"].tzinfo)
-    e_vorsichtig_kurz = backtest_ausfuehren(vorsichtig, ab=ab, daten=daten_v)
+    e_schnell = backtest_ausfuehren(motor_laden("schnell"))
+    ab = None
+    zeilen = [("Schnell (letzte ~60 Tage)", e_schnell)]
+    lang = []
+    for name in ("vorsichtig", "offensiv"):
+        motor = motor_laden(name)
+        daten = daten_laden(motor)
+        if ab is None:
+            zone = daten[next(iter(daten))][0]["zeit"].tzinfo
+            ab = datetime.strptime(e_schnell["kurve"][0]["zeit"], "%Y-%m-%d %H:%M").replace(tzinfo=zone)
+        zeilen.append((f"{motor.titel} (gleiche ~60 Tage)", backtest_ausfuehren(motor, ab=ab, daten=daten)))
+        lang.append((f"{motor.titel} (2 Jahre)", backtest_ausfuehren(motor, daten=daten)))
 
     print()
     print("=" * 128)
     print(f" {'Motor':<34} {'Zeitraum':<21}  {'Ergebnis Bot':>21}  {'Kaufen & halten':>21}  "
           f"{'Trades':>5}  {'Quote':>4}  {'Gebühren':>8}  {'Rückgang':>6}")
     print("-" * 128)
-    print(zeile("Schnell (letzte ~60 Tage)", e_schnell))
-    print(zeile("Vorsichtig (gleiche ~60 Tage)", e_vorsichtig_kurz))
-    print(zeile("Vorsichtig (2 Jahre)", e_vorsichtig))
+    for titel, e in zeilen + lang:
+        print(zeile(titel, e))
     print("=" * 128)
     print(" Quote = Anteil der Trades mit Gewinn. Rückgang = größter Verlust vom Höchststand.")
     print(" Steuern (ca. 26 % auf Gewinne) sind nicht eingerechnet. Vergangenheit garantiert nichts.")

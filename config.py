@@ -102,6 +102,33 @@ MOTOREN = {
         sperre_stunden=24,           # nach Verkauf diese Aktie 24 h nicht wieder kaufen
         max_kaeufe_pro_tag=2,
     ),
+    "offensiv": dict(
+        titel="Offensiv (Momentum)",
+        beschreibung="Stundenkerzen, kauft die Aktien, die in den letzten Tagen am stärksten gestiegen sind, "
+                     "setzt größere Beträge, sichert Gewinne schneller.",
+        intervall="1h",
+        zeitraum_live="60d",
+        zeitraum_backtest="2y",
+        pruef_abstand=900,
+        ema_kurz=20,
+        ema_lang=50,
+        trend_ema=200,
+        rsi_min_kauf=0,
+        rsi_max_kauf=75,
+        stop_loss=0.03,              # schneller raus bei Verlust
+        take_profit=0.08,
+        trailing_stop=0.04,
+        verkauf_bei_trendwende=True,
+        verkauf_unter_trend=True,
+        nichts_ueber_nacht=False,
+        sperre_stunden=24,
+        max_kaeufe_pro_tag=3,
+        einstieg="momentum",         # nicht auf ein Kreuz warten, sondern die stärksten Werte kaufen
+        momentum_kerzen=45,          # Anstieg der letzten ca. 5 Handelstage
+        momentum_min=0.03,           # mindestens +3 % in diesen 5 Tagen
+        max_anteil=0.33,             # bis zu 33 % des Depots pro Aktie
+        max_positionen=3,
+    ),
     "schnell": dict(
         titel="Schnell (Daytrading)",
         beschreibung="5-Minuten-Kerzen, reagiert auf jede kleine Bewegung, verkauft abends alles, sehr viele Trades.",

@@ -696,8 +696,10 @@ async function statusLaden() {
   const kerze = m.intervall === "1h" ? "Stundenkerzen" : `${m.intervall.replace("m", "-Minuten")}-Kerzen`;
   $("regeln-titel").textContent = `So handelt der Bot (Motor: ${m.titel})`;
   $("regeln").innerHTML = [
-    `<strong>Kaufen</strong>, wenn ein Aufwärtstrend beginnt (schneller Durchschnitt kreuzt den langsamen nach oben, berechnet auf ${kerze})` +
-      (m.rsi_min_kauf > 0 ? `, genug Schwung da ist` : "") + ` und die Aktie nicht schon „überkauft“ ist`,
+    m.einstieg === "momentum"
+      ? `<strong>Kaufen</strong>, wenn eine Aktie in den letzten ca. 5 Handelstagen um mindestens <strong>${pz(m.momentum_min)}</strong> gestiegen ist und ihr Trend intakt ist (berechnet auf ${kerze}). Die <strong>stärksten Aufsteiger zuerst</strong>.`
+      : `<strong>Kaufen</strong>, wenn ein Aufwärtstrend beginnt (schneller Durchschnitt kreuzt den langsamen nach oben, berechnet auf ${kerze})` +
+        (m.rsi_min_kauf > 0 ? `, genug Schwung da ist` : "") + ` und die Aktie nicht schon „überkauft“ ist`,
     ...(m.trend_ema ? [`Nur kaufen, wenn die Aktie auch <strong>langfristig im Aufwärtstrend</strong> ist (über ihrem Durchschnitt der letzten ${m.trend_ema} Kerzen, ca. 1 Monat)`] : []),
     `<strong>Verkaufen</strong> bei −${pz(m.stop_loss)} (Stop-Loss), bei +${pz(m.take_profit)} (Gewinnmitnahme) oder wenn der Kurs ${pz(m.trailing_stop)} unter sein Hoch seit dem Kauf fällt` +
       (m.verkauf_bei_trendwende ? ", oder wenn der kurze Trend nach unten dreht" : "") +
@@ -707,7 +709,7 @@ async function statusLaden() {
       : `Darf Aktien <strong>über Nacht und mehrere Tage</strong> halten`,
     ...(m.max_kaeufe_pro_tag < 100 ? [`Höchstens <strong>${m.max_kaeufe_pro_tag} Käufe pro Tag</strong>`] : []),
     ...(m.sperre_stunden ? [`Nach einem Verkauf wird dieselbe Aktie <strong>${m.sperre_stunden} Stunden</strong> nicht wieder gekauft`] : []),
-    `Höchstens <strong>${pz(e.max_anteil)}</strong> des Depots pro Aktie, höchstens <strong>${e.max_positionen}</strong> Positionen gleichzeitig`,
+    `Höchstens <strong>${pz(m.max_anteil || e.max_anteil)}</strong> des Depots pro Aktie, höchstens <strong>${m.max_positionen || e.max_positionen}</strong> Positionen gleichzeitig`,
     `Ab <strong>−${pz(e.tages_limit)}</strong> an einem Tag keine neuen Käufe mehr`,
     `Kosten: <strong>${eur.format(e.gebuehr)}</strong> Gebühr pro Order plus Spread`,
     `Handelszeit: <strong>${esc(e.boerse)} Uhr</strong>, geprüft wird alle ${Math.round(m.pruef_abstand / 60)} Minuten`,
@@ -955,7 +957,7 @@ let backtestTimer = null;
 let btMotor = "vorsichtig";
 let btErgebnisse = {};
 function btMotorenZeigen(motoren) {
-  const zeitraum = { vorsichtig: "2 Jahre", schnell: "60 Tage" };
+  const zeitraum = { vorsichtig: "2 Jahre", offensiv: "2 Jahre", schnell: "60 Tage" };
   $("bt-motoren").innerHTML = motoren.map((mo) =>
     `<button class="chip" data-bt-motor="${esc(mo.name)}" aria-pressed="${mo.name === btMotor}">${esc(mo.titel)}${zeitraum[mo.name] ? `<span class="anzahl">${zeitraum[mo.name]}</span>` : ""}</button>`).join("");
 }

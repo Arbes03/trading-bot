@@ -28,11 +28,24 @@ class Motor:
     nichts_ueber_nacht: bool
     sperre_stunden: float
     max_kaeufe_pro_tag: int
+    einstieg: str = "kreuz"            # "kreuz" = EMA-Kreuz abwarten, "momentum" = stärkste Werte kaufen
+    momentum_kerzen: int = 0           # über wie viele Kerzen der Anstieg gemessen wird
+    momentum_min: float = 0.0          # Mindestanstieg für einen Kauf
+    max_anteil: float | None = None    # None = Wert aus config.MAX_ANTEIL_PRO_POSITION
+    max_positionen: int | None = None  # None = Wert aus config.MAX_POSITIONEN
+
+    @property
+    def anteil_pro_position(self) -> float:
+        return self.max_anteil or config.MAX_ANTEIL_PRO_POSITION
+
+    @property
+    def positionen_hoechstens(self) -> int:
+        return self.max_positionen or config.MAX_POSITIONEN
 
     @property
     def aufwaermen(self) -> int:
         """So viele Kerzen braucht der Motor, bevor seine Durchschnitte aussagekräftig sind."""
-        return max(self.ema_lang, self.trend_ema or 0)
+        return max(self.ema_lang, self.trend_ema or 0, self.momentum_kerzen)
 
     @property
     def kerzen_minuten(self) -> int:
@@ -70,8 +83,10 @@ def indikatoren_berechnen(kerzen: list[dict], motor: Motor) -> list[dict]:
     avg_gewinn = avg_verlust = 0.0
     vorher = None
 
-    for k in kerzen:
+    n = motor.momentum_kerzen
+    for i, k in enumerate(kerzen):
         c = k["close"]
+        k["momentum"] = c / kerzen[i - n]["close"] - 1 if n and i >= n else None
         ema_kurz = c if ema_kurz is None else a_kurz * c + (1 - a_kurz) * ema_kurz
         ema_lang = c if ema_lang is None else a_lang * c + (1 - a_lang) * ema_lang
         if a_trend:
@@ -90,6 +105,8 @@ def indikatoren_berechnen(kerzen: list[dict], motor: Motor) -> list[dict]:
 
 def kauf_signal(letzte: dict, vorletzte: dict, motor: Motor) -> str | None:
     """Kaufen, wenn der schnelle Durchschnitt den langsamen nach oben kreuzt (plus Filter des Motors)."""
+    if motor.einstieg == "momentum":
+        return momentum_signal(letzte, motor)
     kreuzt_hoch = (vorletzte["ema_kurz"] <= vorletzte["ema_lang"]
                    and letzte["ema_kurz"] > letzte["ema_lang"])
     if not kreuzt_hoch:
@@ -100,6 +117,28 @@ def kauf_signal(letzte: dict, vorletzte: dict, motor: Motor) -> str | None:
                                 and letzte["ema_lang"] > letzte["ema_trend"]):
         return None
     return f"Aufwärtstrend (EMA-Kreuz, RSI {letzte['rsi']:.0f})"
+
+
+def momentum_signal(letzte: dict, motor: Motor) -> str | None:
+    """Kaufen, wenn die Aktie in den letzten Tagen stark gestiegen ist und der Trend intakt ist."""
+    momentum = letzte["momentum"]
+    if momentum is None or momentum < motor.momentum_min:
+        return None
+    if letzte["ema_kurz"] <= letzte["ema_lang"] or letzte["rsi"] >= motor.rsi_max_kauf:
+        return None
+    if motor.trend_ema and letzte["close"] <= letzte["ema_trend"]:
+        return None
+    return f"Starker Anstieg ({momentum:+.1%} in ca. 5 Tagen, RSI {letzte['rsi']:.0f})"
+
+
+def reihenfolge(kandidaten: dict[str, dict], positionen: dict, motor: Motor) -> list[str]:
+    """Erst gehaltene Werte (Verkäufe zuerst), dann beim Momentum-Motor die stärksten Werte zuerst."""
+    gehalten = [t for t in kandidaten if t in positionen]
+    rest = [t for t in kandidaten if t not in positionen]
+    if motor.einstieg == "momentum":
+        rest.sort(key=lambda t: kandidaten[t]["momentum"] if kandidaten[t]["momentum"] is not None else -1,
+                  reverse=True)
+    return gehalten + rest
 
 
 def verkauf_grund(kurs: float, letzte: dict, vorletzte: dict, position: dict,

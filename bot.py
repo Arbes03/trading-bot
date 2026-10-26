@@ -13,7 +13,7 @@ import config
 from daten import fuer_alle, kurse_laden
 from depot import Depot, verlauf_eintragen
 from handel import kaeufe_erlaubt, ticker_pruefen, uhrzeit
-from strategie import Motor, aktiver_motor
+from strategie import Motor, aktiver_motor, reihenfolge
 
 ZONE = ZoneInfo(config.ZEITZONE)
 
@@ -41,7 +41,8 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
         kurse.update({t: k[-1]["close"] for t, k in daten.items()})
         darf_kaufen = kaeufe_erlaubt(jetzt, depot.gesamtwert(kurse), tagesstart, motor)
 
-        for ticker, kerzen in daten.items():
+        for ticker in reihenfolge({t: k[-2] for t, k in daten.items()}, depot.positionen, motor):
+            kerzen = daten[ticker]
             # Die letzte Kerze läuft noch, Signale daher auf den abgeschlossenen Kerzen
             meldung = ticker_pruefen(depot, motor, ticker, kerzen[-2], kerzen[-3], kurse[ticker],
                                      jetzt, darf_kaufen, depot.gesamtwert(kurse))

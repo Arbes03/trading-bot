@@ -36,7 +36,7 @@ def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorlet
 
     elif darf_kaufen and depot.darf_kaufen(ticker, zeit, motor):
         grund = kauf_signal(letzte, vorletzte, motor)
-        if grund and depot.kaufen(ticker, kurs, zeit, grund, depotwert):
+        if grund and depot.kaufen(ticker, kurs, zeit, grund, depotwert, motor):
             stueck = depot.positionen[ticker]["stueck"]
             return f"KAUF    {stueck} x {name} zu {kurs:.2f} EUR | {grund}"
     return None

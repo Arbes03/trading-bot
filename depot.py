@@ -44,11 +44,13 @@ class Depot:
             wert += pos["stueck"] * kurse.get(ticker, pos["einstandskurs"])
         return wert
 
-    def kaufen(self, ticker: str, kurs: float, zeit, grund: str, depotwert: float) -> bool:
-        if ticker in self.positionen or len(self.positionen) >= config.MAX_POSITIONEN:
+    def kaufen(self, ticker: str, kurs: float, zeit, grund: str, depotwert: float, motor=None) -> bool:
+        max_positionen = motor.positionen_hoechstens if motor else config.MAX_POSITIONEN
+        anteil = motor.anteil_pro_position if motor else config.MAX_ANTEIL_PRO_POSITION
+        if ticker in self.positionen or len(self.positionen) >= max_positionen:
             return False
         kaufkurs = kurs * (1 + config.SPREAD / 2)
-        budget = min(depotwert * config.MAX_ANTEIL_PRO_POSITION,
+        budget = min(depotwert * anteil,
                      self.bargeld - config.GEBUEHR_PRO_ORDER)
         stueck = math.floor(budget / kaufkurs)
         if stueck < 1:
