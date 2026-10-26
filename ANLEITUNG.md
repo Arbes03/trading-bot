@@ -47,6 +47,20 @@ Kosten: 0 €. Du brauchst nur ein kostenloses GitHub-Konto.
 
 Gut zu wissen: GitHub startet geplante Läufe manchmal ein paar Minuten zu spät. Für diesen Bot ist das egal.
 
+### Nachrichten aufs Handy (Telegram)
+
+Der Bot schickt bei jedem Kauf und Verkauf eine Nachricht und jeden Handelstag nach Börsenschluss einen Tagesabschluss.
+
+1. In Telegram bei **@BotFather** `/newbot` schreiben und einen Bot anlegen. Er schickt dir den **Token**.
+2. Deinem neuen Bot einmal **Start** schreiben.
+3. Deine **Chat-ID** holen (z. B. bei **@userinfobot**: Start tippen, er antwortet mit deiner Id).
+4. Bei GitHub unter *Settings → Secrets and variables → Actions* zwei Geheimnisse anlegen:
+   `TELEGRAM_TOKEN` (der Token) und `TELEGRAM_CHAT_ID` (die Id).
+
+Beim nächsten Lauf kommt die Nachricht „Trading-Bot verbunden ✅“. Ob es klappt, steht auch in der Datei
+`benachrichtigung.json` im Projekt (`eingerichtet` und ggf. `letzter_fehler`).
+Token vergessen? Bei @BotFather `/mybots` → deinen Bot → **API Token**.
+
 ---
 
 ## Die Strategie-Motoren

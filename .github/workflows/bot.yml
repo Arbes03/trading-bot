@@ -40,6 +40,7 @@ jobs:
         env:
           # Zugangsdaten für Handy-Nachrichten, geheim hinterlegt unter
           # Settings -> Secrets and variables -> Actions. Was fehlt, wird nicht benutzt.
+          # Telegram: TELEGRAM_TOKEN (von @BotFather) und TELEGRAM_CHAT_ID (deine Nutzer-ID).
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           CALLMEBOT_TELEFON: ${{ secrets.CALLMEBOT_TELEFON }}
