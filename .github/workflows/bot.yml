@@ -38,8 +38,10 @@ jobs:
       - name: Prüfrunde
         run: python cloud_runde.py
         env:
-          # Kanalname für Handy-Nachrichten (App "ntfy"), geheim hinterlegt unter
-          # Settings -> Secrets and variables -> Actions. Fehlt er, gibt es keine Nachrichten.
+          # Zugangsdaten für Handy-Nachrichten, geheim hinterlegt unter
+          # Settings -> Secrets and variables -> Actions. Was fehlt, wird nicht benutzt.
+          CALLMEBOT_TELEFON: ${{ secrets.CALLMEBOT_TELEFON }}
+          CALLMEBOT_SCHLUESSEL: ${{ secrets.CALLMEBOT_SCHLUESSEL }}
           NTFY_THEMA: ${{ secrets.NTFY_THEMA }}
 
       - name: Stand speichern

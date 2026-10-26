@@ -11,7 +11,7 @@ import shutil
 from datetime import datetime
 
 import config
-from benachrichtigung import tagesabschluss_melden, trade_melden
+from benachrichtigung import eingerichtet, tagesabschluss_melden, trade_melden, willkommen_melden
 from bot import ZONE, boerse_offen, runde
 from handel import uhrzeit
 from daten import fuer_alle, marktueberblick
@@ -87,26 +87,36 @@ def main():
     shutil.copy(os.path.join("web", "index.html"), os.path.join(AUSGABE_ORDNER, "index.html"))
     print(f"Webseiten-Daten geschrieben: {AUSGABE_ORDNER}/status.json")
 
+    gemerkt = gemerktes_laden()
+    wege = eingerichtet()
+    # Einmalig, sobald ein Nachrichtenweg neu eingerichtet ist: Willkommens-Nachricht als Test
+    if wege and gemerkt.get("willkommen") != wege and willkommen_melden(status, wege):
+        gemerkt["willkommen"] = wege
+        print(f"Willkommens-Nachricht gesendet ({wege}).")
     if config.NACHRICHT_TAGESABSCHLUSS:
-        tagesabschluss_pruefen(jetzt, status)
+        tagesabschluss_pruefen(jetzt, status, gemerkt)
+    with open(config.BENACHRICHTIGUNG_DATEI, "w", encoding="utf-8") as f:
+        json.dump(gemerkt, f)
 
 
-def tagesabschluss_pruefen(jetzt: datetime, status: dict):
+def gemerktes_laden() -> dict:
+    if not os.path.exists(config.BENACHRICHTIGUNG_DATEI):
+        return {}
+    with open(config.BENACHRICHTIGUNG_DATEI, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def tagesabschluss_pruefen(jetzt: datetime, status: dict, gemerkt: dict):
     """Einmal pro Handelstag nach Börsenschluss eine Zusammenfassung aufs Handy."""
     heute = f"{jetzt:%Y-%m-%d}"
-    if jetzt.weekday() >= 5 or uhrzeit(jetzt) < config.BOERSE_ZU:
+    if not eingerichtet() or jetzt.weekday() >= 5 or uhrzeit(jetzt) < config.BOERSE_ZU:
         return
     if not any(v["zeit"][:10] == heute for v in verlauf_lesen(config.VERLAUF_DATEI)):
         return  # heute keine Prüfrunde gelaufen (z. B. Feiertag)
-    gemerkt = {}
-    if os.path.exists(config.BENACHRICHTIGUNG_DATEI):
-        with open(config.BENACHRICHTIGUNG_DATEI, encoding="utf-8") as f:
-            gemerkt = json.load(f)
     if gemerkt.get("tagesabschluss") == heute:
         return
     tagesabschluss_melden(status, heute)
-    with open(config.BENACHRICHTIGUNG_DATEI, "w", encoding="utf-8") as f:
-        json.dump({"tagesabschluss": heute}, f)
+    gemerkt["tagesabschluss"] = heute
     print("Tagesabschluss gesendet.")
 
 
