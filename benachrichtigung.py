@@ -21,6 +21,15 @@ import config
 
 CALLMEBOT_URL = "https://api.callmebot.com/whatsapp.php"
 
+# Letzte Fehlermeldung (ohne Zugangsdaten), wird zur Kontrolle in benachrichtigung.json gespeichert
+letzter_fehler = ""
+
+
+def _fehler(text: str):
+    global letzter_fehler
+    letzter_fehler = text
+    print(text)
+
 
 def eur(betrag: float, vorzeichen: bool = False) -> str:
     """1958.49 -> '1.958,49 €' (deutsche Schreibweise)."""
@@ -66,10 +75,10 @@ def telegram_senden(titel: str, text: str) -> bool:
     except urllib.error.HTTPError as fehler:
         # Fehlertext von Telegram ausgeben, aber nie die Adresse (sie enthält den Schlüssel)
         beschreibung = json.loads(fehler.read() or b"{}").get("description", "")
-        print(f"Telegram-Nachricht abgelehnt ({fehler.code}): {beschreibung}. "
-              "Tipp: Hast du deinem Bot schon einmal /start geschrieben? Stimmen Token und Chat-ID?")
+        _fehler(f"Telegram-Nachricht abgelehnt ({fehler.code}): {beschreibung}. "
+                "Tipp: Hast du deinem Bot schon einmal /start geschrieben? Stimmen Token und Chat-ID?")
     except Exception as fehler:
-        print(f"Telegram-Nachricht konnte nicht gesendet werden: {type(fehler).__name__}")
+        _fehler(f"Telegram-Nachricht konnte nicht gesendet werden: {type(fehler).__name__}")
     return False
 
 

@@ -10,6 +10,7 @@ import os
 import shutil
 from datetime import datetime
 
+import benachrichtigung
 import config
 from benachrichtigung import eingerichtet, tagesabschluss_melden, trade_melden, willkommen_melden
 from bot import ZONE, boerse_offen, runde
@@ -96,6 +97,10 @@ def main():
         print(f"Willkommens-Nachricht gesendet ({wege}).")
     if config.NACHRICHT_TAGESABSCHLUSS:
         tagesabschluss_pruefen(jetzt, status, gemerkt)
+    # Zur Kontrolle (ohne Zugangsdaten): welche Wege eingerichtet sind und der letzte Fehler
+    gemerkt["eingerichtet"] = wege or "keine"
+    if benachrichtigung.letzter_fehler:
+        gemerkt["letzter_fehler"] = f"{jetzt:%d.%m. %H:%M}: {benachrichtigung.letzter_fehler}"
     with open(config.BENACHRICHTIGUNG_DATEI, "w", encoding="utf-8") as f:
         json.dump(gemerkt, f)
 
