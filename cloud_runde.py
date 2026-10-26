@@ -11,7 +11,9 @@ import shutil
 from datetime import datetime
 
 import config
+from benachrichtigung import tagesabschluss_melden, trade_melden
 from bot import ZONE, boerse_offen, runde
+from handel import uhrzeit
 from daten import fuer_alle, marktueberblick
 from depot import Depot, verlauf_lesen
 from strategie import aktiver_motor
@@ -53,6 +55,9 @@ def main():
             melden(m)
         melden(f"Prüfrunde fertig ({motor.titel}): Depot {depot.gesamtwert(kurse):,.2f} EUR, "
                f"Kurse für {anzahl}/{len(config.WATCHLIST)} Werte")
+        if config.NACHRICHT_BEI_TRADES:
+            for trade in depot.trades:  # nur die Trades dieser Runde
+                trade_melden(trade, depot.gesamtwert(kurse))
     else:
         print("Börse geschlossen, keine Prüfrunde.")
 
@@ -81,6 +86,28 @@ def main():
         json.dump(status, f, ensure_ascii=False, default=str)
     shutil.copy(os.path.join("web", "index.html"), os.path.join(AUSGABE_ORDNER, "index.html"))
     print(f"Webseiten-Daten geschrieben: {AUSGABE_ORDNER}/status.json")
+
+    if config.NACHRICHT_TAGESABSCHLUSS:
+        tagesabschluss_pruefen(jetzt, status)
+
+
+def tagesabschluss_pruefen(jetzt: datetime, status: dict):
+    """Einmal pro Handelstag nach Börsenschluss eine Zusammenfassung aufs Handy."""
+    heute = f"{jetzt:%Y-%m-%d}"
+    if jetzt.weekday() >= 5 or uhrzeit(jetzt) < config.BOERSE_ZU:
+        return
+    if not any(v["zeit"][:10] == heute for v in verlauf_lesen(config.VERLAUF_DATEI)):
+        return  # heute keine Prüfrunde gelaufen (z. B. Feiertag)
+    gemerkt = {}
+    if os.path.exists(config.BENACHRICHTIGUNG_DATEI):
+        with open(config.BENACHRICHTIGUNG_DATEI, encoding="utf-8") as f:
+            gemerkt = json.load(f)
+    if gemerkt.get("tagesabschluss") == heute:
+        return
+    tagesabschluss_melden(status, heute)
+    with open(config.BENACHRICHTIGUNG_DATEI, "w", encoding="utf-8") as f:
+        json.dump({"tagesabschluss": heute}, f)
+    print("Tagesabschluss gesendet.")
 
 
 if __name__ == "__main__":

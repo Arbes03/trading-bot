@@ -141,3 +141,10 @@ MOTOR_DATEI = "motor.txt"  # merkt sich den auf der Webseite gewählten Motor
 
 # --- Webseite ---
 WEB_PORT = 8050
+WEBSEITE_URL = "https://arbes03.github.io/trading-bot/"
+
+# --- Handy-Nachrichten (App "ntfy") ---
+NTFY_SERVER = "https://ntfy.sh"
+NACHRICHT_BEI_TRADES = True        # bei jedem Kauf und Verkauf
+NACHRICHT_TAGESABSCHLUSS = True    # einmal pro Handelstag nach Börsenschluss
+BENACHRICHTIGUNG_DATEI = "benachrichtigung.json"  # merkt sich, wann der letzte Tagesabschluss kam
