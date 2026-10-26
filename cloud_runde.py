@@ -89,6 +89,7 @@ def main():
 
     gemerkt = gemerktes_laden()
     wege = eingerichtet()
+    print(f"Handy-Nachrichten eingerichtet: {wege or 'keine'}")
     # Einmalig, sobald ein Nachrichtenweg neu eingerichtet ist: Willkommens-Nachricht als Test
     if wege and gemerkt.get("willkommen") != wege and willkommen_melden(status, wege):
         gemerkt["willkommen"] = wege
