@@ -1,15 +1,19 @@
-"""Nachrichten aufs Handy: per WhatsApp (CallMeBot) und/oder per App "ntfy". Beides kostenlos.
+"""Nachrichten aufs Handy: per Telegram, WhatsApp (CallMeBot) und/oder App "ntfy". Alles kostenlos.
 
 Die Zugangsdaten stehen NICHT im Code (das Projekt ist öffentlich), sondern in Umgebungsvariablen,
 die bei GitHub als Geheimnisse (Secrets) hinterlegt sind:
+  TELEGRAM_TOKEN        der Schlüssel deines Telegram-Bots (von @BotFather)
+  TELEGRAM_CHAT_ID      deine Telegram-Nutzer-ID (von @userinfobot)
   CALLMEBOT_TELEFON     deine WhatsApp-Nummer mit Ländervorwahl, z. B. +491701234567
   CALLMEBOT_SCHLUESSEL  der API-Schlüssel, den CallMeBot dir per WhatsApp geschickt hat
   NTFY_THEMA            (optional) Kanalname für die App "ntfy"
 Was nicht hinterlegt ist, wird einfach nicht benutzt.
 """
 
+import html
 import json
 import os
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -29,6 +33,8 @@ def eur(betrag: float, vorzeichen: bool = False) -> str:
 def eingerichtet() -> str:
     """Welche Wege eingerichtet sind, z. B. 'WhatsApp' oder 'WhatsApp + ntfy' (leer = keiner)."""
     wege = []
+    if os.environ.get("TELEGRAM_TOKEN", "").strip() and os.environ.get("TELEGRAM_CHAT_ID", "").strip():
+        wege.append("Telegram")
     if os.environ.get("CALLMEBOT_TELEFON", "").strip() and os.environ.get("CALLMEBOT_SCHLUESSEL", "").strip():
         wege.append("WhatsApp")
     if os.environ.get("NTFY_THEMA", "").strip():
@@ -38,9 +44,33 @@ def eingerichtet() -> str:
 
 def senden(titel: str, text: str, tags: list[str] | None = None, prioritaet: int = 3) -> bool:
     """Schickt die Nachricht über alle eingerichteten Wege. True, wenn mindestens einer geklappt hat."""
+    telegram = telegram_senden(titel, text)
     whatsapp = whatsapp_senden(titel, text)
     ntfy = ntfy_senden(titel, text, tags, prioritaet)
-    return whatsapp or ntfy
+    return telegram or whatsapp or ntfy
+
+
+def telegram_senden(titel: str, text: str) -> bool:
+    token = os.environ.get("TELEGRAM_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not (token and chat_id):
+        return False
+    inhalt = f"<b>{html.escape(titel)}</b>\n{html.escape(text)}\n\n{config.WEBSEITE_URL}"
+    daten = {"chat_id": chat_id, "text": inhalt, "parse_mode": "HTML", "disable_web_page_preview": True}
+    anfrage = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage",
+                                     data=json.dumps(daten).encode("utf-8"),
+                                     headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(anfrage, timeout=20) as antwort:
+            return json.load(antwort).get("ok", False)
+    except urllib.error.HTTPError as fehler:
+        # Fehlertext von Telegram ausgeben, aber nie die Adresse (sie enthält den Schlüssel)
+        beschreibung = json.loads(fehler.read() or b"{}").get("description", "")
+        print(f"Telegram-Nachricht abgelehnt ({fehler.code}): {beschreibung}. "
+              "Tipp: Hast du deinem Bot schon einmal /start geschrieben? Stimmen Token und Chat-ID?")
+    except Exception as fehler:
+        print(f"Telegram-Nachricht konnte nicht gesendet werden: {type(fehler).__name__}")
+    return False
 
 
 def whatsapp_senden(titel: str, text: str) -> bool:

@@ -40,6 +40,8 @@ jobs:
         env:
           # Zugangsdaten für Handy-Nachrichten, geheim hinterlegt unter
           # Settings -> Secrets and variables -> Actions. Was fehlt, wird nicht benutzt.
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           CALLMEBOT_TELEFON: ${{ secrets.CALLMEBOT_TELEFON }}
           CALLMEBOT_SCHLUESSEL: ${{ secrets.CALLMEBOT_SCHLUESSEL }}
           NTFY_THEMA: ${{ secrets.NTFY_THEMA }}
