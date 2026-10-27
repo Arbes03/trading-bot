@@ -4,21 +4,21 @@
     "DHL.DE": {
       "stueck": 34,
       "einstandskurs": 58.174539847373964,
-      "hoechstkurs": 58.65999984741211,
+      "hoechstkurs": 58.81999969482422,
       "kaufzeit": "2026-10-26 10:47:37.189570+01:00",
       "kosten": 1978.9343548107147
     },
     "EUNL.DE": {
       "stueck": 15,
       "einstandskurs": 131.24280921554566,
-      "hoechstkurs": 131.33999633789062,
+      "hoechstkurs": 131.52000427246094,
       "kaufzeit": "2026-10-27 12:28:56.951701+01:00",
       "kosten": 1969.642138233185
     },
     "SXR8.DE": {
       "stueck": 2,
       "einstandskurs": 745.9864377899171,
-      "hoechstkurs": 746.0,
+      "hoechstkurs": 747.5,
       "kaufzeit": "2026-10-27 12:28:56.951701+01:00",
       "kosten": 1492.9728755798342
     }
