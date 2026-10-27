@@ -312,12 +312,12 @@
   <!-- ÜBERSICHT -->
   <section class="ansicht" id="uebersicht">
     <div class="notbremse" id="notbremse" role="alert" hidden>
-      <div class="notbremse-titel">🚨 Notbremse aktiv: Der Bot hat alles verkauft und handelt nicht mehr</div>
+      <div class="notbremse-titel" id="notbremse-titel">🚨 Notbremse aktiv: Der Bot hat alles verkauft und handelt nicht mehr</div>
       <div id="notbremse-grund"></div>
       <div class="nur-lokal" style="margin-top:10px"><button id="notbremse-knopf" class="haupt">Notbremse aufheben, Bot handelt wieder</button></div>
-      <div class="nur-cloud" style="margin-top:8px">Freigeben: Im GitHub-Projekt auf <strong>Add file → Create new file</strong> klicken,
-        als Namen <code>notbremse_aufheben.txt</code> eintragen (Inhalt egal) und <strong>Commit changes</strong> klicken.
-        Der Bot hebt die Pause dann auf und meldet sich in Telegram.</div>
+      <div class="nur-cloud" style="margin-top:8px">Freigeben: Schreib deinem Telegram-Bot <code>/weiter</code>.
+        Oder im GitHub-Projekt auf <strong>Add file → Create new file</strong> klicken, als Namen <code>notbremse_aufheben.txt</code>
+        eintragen (Inhalt egal) und <strong>Commit changes</strong> klicken.</div>
     </div>
     <div class="ergebnis" id="ergebnis" aria-live="polite">
       <div>
@@ -668,8 +668,15 @@ async function statusLaden() {
 
   ergebnisZeigen(s);
   const nb = s.notbremse || {};
-  $("notbremse").hidden = !nb.aktiv;
-  $("notbremse-grund").textContent = nb.aktiv ? `Ausgelöst am ${zeitKurz(nb.seit)} Uhr: ${nb.grund}.` : "";
+  $("notbremse").hidden = !nb.aktiv && !nb.verkauf_angefordert;
+  $("notbremse-titel").textContent = nb.verkauf_angefordert
+    ? "⏳ Verkauf angefordert: Der Bot verkauft alles, sobald die Börse öffnet"
+    : nb.art === "wunsch"
+      ? "⏸️ Pausiert: Du hast alles verkaufen lassen, der Bot kauft nichts Neues"
+      : "🚨 Notbremse aktiv: Der Bot hat alles verkauft und handelt nicht mehr";
+  $("notbremse-grund").textContent = nb.verkauf_angefordert
+    ? `Angefordert am ${zeitKurz(nb.verkauf_angefordert)} Uhr. Abbrechen: /weiter in Telegram.`
+    : nb.aktiv ? `Seit ${zeitKurz(nb.seit)} Uhr: ${nb.grund}.` : "";
   $("k-wert").textContent = eur.format(s.depotwert);
   $("k-wert-unter").textContent = `Start: ${eur.format(s.startkapital)}`;
   const investiert = s.positionen.reduce((summe, p) => summe + p.wert, 0);

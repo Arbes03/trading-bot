@@ -69,6 +69,18 @@ Der Bot schickt bei jedem Kauf und Verkauf eine Nachricht und jeden Handelstag n
 4. Bei GitHub unter *Settings → Secrets and variables → Actions* zwei Geheimnisse anlegen:
    `TELEGRAM_TOKEN` (der Token) und `TELEGRAM_CHAT_ID` (die Id).
 
+**Dem Bot Befehle schicken** (nur aus deinem eigenen Chat, andere werden ignoriert):
+
+| Befehl | Was passiert |
+|---|---|
+| `/verkaufen` | Alle Aktien verkaufen und pausieren. Ist die Börse zu, passiert es bei der nächsten Öffnung. |
+| `/weiter` | Pause aufheben (auch nach der Notbremse) bzw. angeforderten Verkauf abbrechen |
+| `/stand` | Aktuellen Stand schicken |
+| `/hilfe` | Befehle anzeigen |
+
+Der Bot liest deine Nachrichten bei jedem Lauf, also Mo–Fr während der Börsenzeit etwa alle 15–40 Minuten.
+Abends und am Wochenende kommt die Antwort erst beim nächsten Lauf.
+
 Beim nächsten Lauf kommt die Nachricht „Trading-Bot verbunden ✅“. Ob es klappt, steht auch in der Datei
 `benachrichtigung.json` im Projekt (`eingerichtet` und ggf. `letzter_fehler`).
 Token vergessen? Bei @BotFather `/mybots` → deinen Bot → **API Token**.

@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 import config
 from daten import fuer_alle, kurse_laden
 from depot import Depot, verlauf_eintragen
-from handel import kaeufe_erlaubt, notbremse_pruefen, ticker_pruefen, uhrzeit
+from handel import kaeufe_erlaubt, notbremse_pruefen, ticker_pruefen, uhrzeit, wunsch_verkauf_pruefen
 from strategie import Motor, aktiver_motor, reihenfolge
 
 ZONE = ZoneInfo(config.ZEITZONE)
@@ -41,9 +41,9 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
         kurse.update({t: k[-1]["close"] for t, k in daten.items()})
         darf_kaufen = kaeufe_erlaubt(jetzt, depot.gesamtwert(kurse), tagesstart, motor)
 
-        notbremse = notbremse_pruefen(depot, kurse, jetzt)
-        if notbremse:
-            meldungen.append(notbremse)
+        for meldung in (wunsch_verkauf_pruefen(depot, kurse, jetzt), notbremse_pruefen(depot, kurse, jetzt)):
+            if meldung:
+                meldungen.append(meldung)
         # Notbremse aktiv: nichts mehr handeln, bis du sie aufhebst
         for ticker in [] if depot.pausiert else reihenfolge({t: k[-2] for t, k in daten.items()}, depot.positionen, motor):
             kerzen = daten[ticker]

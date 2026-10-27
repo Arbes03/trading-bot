@@ -92,6 +92,32 @@ def telegram_senden(titel: str, text: str) -> bool:
     return False
 
 
+def telegram_befehle_holen(offset: int) -> tuple[list[str], int]:
+    """Neue Nachrichten an den Bot abholen. Nur Nachrichten aus DEINEM Chat zählen.
+
+    Gibt (Befehle in Kleinbuchstaben, neuer Offset) zurück. Der Offset sorgt dafür,
+    dass jede Nachricht nur einmal ausgeführt wird.
+    """
+    token = ohne_leerzeichen(os.environ.get("TELEGRAM_TOKEN", ""))
+    chat_id = ohne_leerzeichen(os.environ.get("TELEGRAM_CHAT_ID", ""))
+    if not (token and chat_id):
+        return [], offset
+    url = f"https://api.telegram.org/bot{token}/getUpdates?offset={offset + 1}&timeout=0"
+    try:
+        with urllib.request.urlopen(url, timeout=20) as antwort:
+            updates = json.load(antwort).get("result", [])
+    except Exception as fehler:
+        print(f"Telegram-Befehle konnten nicht abgeholt werden: {type(fehler).__name__}")
+        return [], offset
+    befehle = []
+    for update in updates:
+        offset = max(offset, update["update_id"])
+        nachricht = update.get("message") or {}
+        if str(nachricht.get("chat", {}).get("id")) == chat_id and nachricht.get("text"):
+            befehle.append(nachricht["text"].strip().lower())
+    return befehle, offset
+
+
 def telegram_pruefen(token: str, chat_id: str) -> str:
     """Fehlersuche: Wie heißt der Bot, und wer hat ihm geschrieben? Gibt nur gekürzte Angaben zurück."""
     def abfragen(methode: str):
@@ -174,9 +200,22 @@ def notbremse_melden(pausiert: dict, depotwert: float):
     senden("🚨 NOTBREMSE: Bot hat alles verkauft",
            f"{pausiert['grund']}.\n\nDer Bot hat alle Aktien verkauft und kauft nichts mehr, bis du ihn wieder freigibst.\n"
            f"Depot jetzt: {eur(depotwert)} (alles Bargeld).\n\n"
-           "Freigeben: Im GitHub-Projekt eine leere Datei notbremse_aufheben.txt anlegen "
-           "(Add file → Create new file → Commit). Der Bot hebt die Pause dann auf.",
+           "Freigeben: Schreib mir /weiter (oder im GitHub-Projekt eine leere Datei "
+           "notbremse_aufheben.txt anlegen).",
            tags=["rotating_light"], prioritaet=5)
+
+
+def wunsch_verkauf_melden(trades: list[dict], depotwert: float):
+    verkaeufe = [t for t in trades if t["art"] == "VERKAUF"]
+    summe = sum(t["gewinn"] for t in verkaeufe)
+    zeilen = [f"• {config.WATCHLIST.get(t['ticker'], t['ticker'])}: {t['stueck']} Stk. zu {eur(t['kurs'])} "
+              f"({eur(t['gewinn'], vorzeichen=True)})" for t in verkaeufe]
+    ergebnis = depotwert - config.STARTKAPITAL
+    senden(f"✅ Alles verkauft ({eur(summe, vorzeichen=True)})",
+           "\n".join(zeilen) + f"\n\nDepot jetzt: {eur(depotwert)}, alles Bargeld "
+           f"({eur(ergebnis, vorzeichen=True)} seit Start).\n"
+           "Ich kaufe nichts Neues, bis du /weiter schreibst.",
+           tags=["moneybag"])
 
 
 def willkommen_melden(status: dict, wege: str) -> bool:
@@ -184,13 +223,28 @@ def willkommen_melden(status: dict, wege: str) -> bool:
     investiert = sum(p["investiert"] for p in status["positionen"])
     return senden("Trading-Bot verbunden ✅",
                   f"Ab jetzt bekommst du hier Nachrichten ({wege}): bei jedem Kauf und Verkauf "
-                  f"und jeden Handelstag nach Börsenschluss einen Tagesabschluss.\n\n"
+                  f"und jeden Handelstag nach Börsenschluss einen Tagesabschluss.\n"
+                  f"Du kannst mir auch schreiben: /verkaufen, /weiter, /stand, /hilfe\n\n"
                   f"Stand jetzt: Depot {eur(status['depotwert'])} ({eur(e['gesamt'], vorzeichen=True)} seit Start), "
                   f"investiert {eur(investiert)} in {len(status['positionen'])} Werten, Bargeld {eur(status['bargeld'])}.",
                   tags=["wave"])
 
 
 def tagesabschluss_melden(status: dict, datum: str):
+    zeilen, lage = zusammenfassung(status, datum)
+    senden(f"Tagesabschluss: {lage} ({eur(status['ergebnis']['gesamt'], vorzeichen=True)})", "\n".join(zeilen),
+           tags=["bar_chart"])
+
+
+def stand_melden(status: dict, datum: str):
+    zeilen, lage = zusammenfassung(status, datum)
+    if status.get("notbremse", {}).get("aktiv"):
+        zeilen.append("⏸️ Pausiert: Ich kaufe nichts, bis du /weiter schreibst.")
+    senden(f"📊 Stand jetzt: {lage} ({eur(status['ergebnis']['gesamt'], vorzeichen=True)})", "\n".join(zeilen),
+           tags=["bar_chart"])
+
+
+def zusammenfassung(status: dict, datum: str) -> tuple[list[str], str]:
     e = status["ergebnis"]
     zeilen = [
         f"Depot: {eur(status['depotwert'])}",
@@ -208,5 +262,4 @@ def tagesabschluss_melden(status: dict, datum: str):
     verkaeufe = sum(t["art"] == "VERKAUF" for t in heute)
     zeilen.append(f"Heute: {kaeufe} Käufe, {verkaeufe} Verkäufe")
     lage = "im Plus" if e["gesamt"] > 0.005 else "im Minus" if e["gesamt"] < -0.005 else "ausgeglichen"
-    senden(f"Tagesabschluss: {lage} ({eur(e['gesamt'], vorzeichen=True)})", "\n".join(zeilen),
-           tags=["bar_chart"])
+    return zeilen, lage

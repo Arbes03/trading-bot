@@ -29,14 +29,26 @@ def notbremse_pruefen(depot: Depot, kurse: dict[str, float], zeit) -> str | None
     grenze = config.STARTKAPITAL * (1 - config.NOTBREMSE_AB)
     if wert > grenze:
         return None
-    for ticker in list(depot.positionen):
-        depot.verkaufen(ticker, kurse.get(ticker, depot.positionen[ticker]["einstandskurs"]), zeit, "Notbremse")
-    depot.pausiert = {
-        "seit": str(zeit)[:16],
-        "grund": f"Depot bei {wert:,.2f} EUR, unter der Grenze von {grenze:,.2f} EUR "
-                 f"(-{config.NOTBREMSE_AB:.0%} vom Startkapital)",
-    }
+    alles_verkaufen(depot, kurse, zeit, "Notbremse", "notbremse",
+                    f"Depot bei {wert:,.2f} EUR, unter der Grenze von {grenze:,.2f} EUR "
+                    f"(-{config.NOTBREMSE_AB:.0%} vom Startkapital)")
     return f"NOTBREMSE: alles verkauft, Bot pausiert. {depot.pausiert['grund']}"
+
+
+def wunsch_verkauf_pruefen(depot: Depot, kurse: dict[str, float], zeit) -> str | None:
+    """Hast du "alles verkaufen" angefordert (z. B. per Telegram), wird das jetzt ausgeführt."""
+    if not depot.verkauf_angefordert:
+        return None
+    depot.verkauf_angefordert = None
+    alles_verkaufen(depot, kurse, zeit, "Auf deinen Wunsch", "wunsch", "Du hast alles verkaufen lassen")
+    return f"VERKAUF AUF WUNSCH: alles verkauft, Bot pausiert. Depot: {depot.bargeld:,.2f} EUR"
+
+
+def alles_verkaufen(depot: Depot, kurse: dict[str, float], zeit, grund: str, art: str, beschreibung: str):
+    """Verkauft alle Positionen und pausiert den Bot (bis zur Freigabe)."""
+    for ticker in list(depot.positionen):
+        depot.verkaufen(ticker, kurse.get(ticker, depot.positionen[ticker]["einstandskurs"]), zeit, grund)
+    depot.pausiert = {"seit": str(zeit)[:16], "grund": beschreibung, "art": art}
 
 
 def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorletzte: dict,
