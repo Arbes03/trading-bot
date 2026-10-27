@@ -1,5 +1,5 @@
 {
-  "bargeld": 6062.576425714493,
+  "bargeld": 7981.696251306534,
   "positionen": {
     "DHL.DE": {
       "stueck": 34,
@@ -7,18 +7,14 @@
       "hoechstkurs": 58.65999984741211,
       "kaufzeit": "2026-10-26 10:47:37.189570+01:00",
       "kosten": 1978.9343548107147
-    },
-    "AIR.DE": {
-      "stueck": 10,
-      "einstandskurs": 195.74892194747926,
-      "hoechstkurs": 195.74892194747926,
-      "kaufzeit": "2026-10-26 11:26:59.183542+01:00",
-      "kosten": 1958.4892194747927
     }
   },
-  "letzte_verkaeufe": {},
+  "letzte_verkaeufe": {
+    "AIR.DE": "2026-10-27 09:19:58.829088+01:00"
+  },
   "kaeufe_heute": {
     "tag": "2026-10-26",
     "anzahl": 2
-  }
+  },
+  "pausiert": null
 }
