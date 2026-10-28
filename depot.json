@@ -11,14 +11,14 @@
     "EUNL.DE": {
       "stueck": 15,
       "einstandskurs": 131.24280921554566,
-      "hoechstkurs": 131.52000427246094,
+      "hoechstkurs": 131.75,
       "kaufzeit": "2026-10-27 12:28:56.951701+01:00",
       "kosten": 1969.642138233185
     },
     "SXR8.DE": {
       "stueck": 2,
       "einstandskurs": 745.9864377899171,
-      "hoechstkurs": 747.5,
+      "hoechstkurs": 750.2000122070312,
       "kaufzeit": "2026-10-27 12:28:56.951701+01:00",
       "kosten": 1492.9728755798342
     }
@@ -30,5 +30,6 @@
     "tag": "2026-10-27",
     "anzahl": 2
   },
-  "pausiert": null
+  "pausiert": null,
+  "verkauf_angefordert": null
 }
