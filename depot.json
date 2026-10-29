@@ -25,14 +25,14 @@
     "MRK.DE": {
       "stueck": 13,
       "einstandskurs": 145.58639055252075,
-      "hoechstkurs": 149.4499969482422,
+      "hoechstkurs": 149.5,
       "kaufzeit": "2026-10-28 10:14:40.939319+01:00",
       "kosten": 1893.6230771827697
     },
     "ADS.DE": {
       "stueck": 12,
       "einstandskurs": 161.6904063949585,
-      "hoechstkurs": 163.75,
+      "hoechstkurs": 164.5500030517578,
       "kaufzeit": "2026-10-29 09:35:50.492080+01:00",
       "kosten": 1941.2848767395021
     }
