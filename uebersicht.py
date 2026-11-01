@@ -75,6 +75,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         },
         "markt": markt,
         "trades": list(reversed(trades[-100:])),
+        "verkaeufe": verkaeufe_auswerten(trades),
         "statistik": {
             "anzahl": len(gewinne),
             "gewinn_trades": sum(g > 0 for g in gewinne),
@@ -98,6 +99,41 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         "backtest": backtest,
         "nachrichten": nachrichten_status(),
     }
+
+
+def verkaeufe_auswerten(trades: list[dict]) -> list[dict]:
+    """Jeder Verkauf mit dem passenden Kauf davor: wann gekauft, zu welchem Preis, wie lange gehalten."""
+    letzter_kauf: dict[str, dict] = {}
+    verkaeufe = []
+    for t in trades:  # trades.csv ist zeitlich sortiert
+        if t["art"] == "KAUF":
+            letzter_kauf[t["ticker"]] = t
+            continue
+        kauf = letzter_kauf.pop(t["ticker"], None)
+        stueck = int(t["stueck"])
+        gewinn = float(t["gewinn"])
+        erloes = stueck * float(t["kurs"]) - config.GEBUEHR_PRO_ORDER
+        investiert = erloes - gewinn
+        tage = None
+        if kauf:
+            tage = (datetime.fromisoformat(t["zeit"]) - datetime.fromisoformat(kauf["zeit"])).total_seconds() / 86400
+        verkaeufe.append({
+            "ticker": t["ticker"],
+            "name": config.WATCHLIST.get(t["ticker"], t["ticker"]),
+            "gruppe": config.GRUPPE.get(t["ticker"], "Aktie"),
+            "stueck": stueck,
+            "kaufzeit": kauf["zeit"] if kauf else None,
+            "kaufkurs": float(kauf["kurs"]) if kauf else None,
+            "verkaufzeit": t["zeit"],
+            "verkaufkurs": float(t["kurs"]),
+            "investiert": investiert,
+            "erloes": erloes,
+            "gewinn": gewinn,
+            "prozent": gewinn / investiert if investiert else 0,
+            "tage": tage,
+            "grund": t["grund"],
+        })
+    return verkaeufe
 
 
 def nachrichten_status() -> dict:

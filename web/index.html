@@ -297,6 +297,9 @@
     <button role="tab" data-ansicht="depot" aria-selected="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M21 9h-5a2 2 0 0 0 0 4h5z"/></svg>
       Mein Depot</button>
+    <button role="tab" data-ansicht="gewinne" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M15.5 9.5a6 6 0 1 1-6 6"/><path d="M9 6v6M7 8h3a1 1 0 0 1 0 2H8a1 1 0 0 0 0 2h3"/></svg>
+      Gewinne</button>
     <button role="tab" data-ansicht="backtest" aria-selected="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
       Backtest</button>
@@ -395,6 +398,36 @@
       <h2>Deine Positionen</h2>
       <p class="hinweis">Jede Aktie und jeder ETF, in den der Bot gerade investiert ist. „Investiert“ = Kaufpreis inklusive Gebühr.</p>
       <div class="tabelle-wrap" id="d-positionen"></div>
+    </div>
+  </section>
+
+  <!-- GEWINNE -->
+  <section class="ansicht" id="gewinne" hidden>
+    <div class="karte">
+      <h2>Rausgeholtes Geld</h2>
+      <p class="hinweis" style="margin:0">Hier zählt nur, was der Bot durch Verkäufe <strong>fest</strong> gewonnen oder verloren hat, inklusive Gebühren.
+        Aktien, die er noch hält, stehen unter „Mein Depot“.</p>
+    </div>
+    <div class="kacheln" id="g-kacheln"></div>
+    <div class="karte">
+      <h2>Verlauf des festen Gewinns</h2>
+      <p class="hinweis">Nach jedem Verkauf: Summe aller bisher rausgeholten Gewinne und Verluste. Gestrichelt: 0 €.</p>
+      <div class="chart" id="chart-gewinne"></div>
+    </div>
+    <div class="zwei">
+      <div class="karte">
+        <h2>Pro Woche</h2>
+        <div class="tabelle-wrap" id="g-wochen"></div>
+      </div>
+      <div class="karte">
+        <h2>Pro Aktie / ETF</h2>
+        <div class="tabelle-wrap" id="g-aktien"></div>
+      </div>
+    </div>
+    <div class="karte" style="margin-top:16px">
+      <h2>Alle Verkäufe</h2>
+      <p class="hinweis">Neueste oben. Gewinn = Verkaufserlös minus Kaufpreis, jeweils inklusive 1 € Gebühr.</p>
+      <div class="tabelle-wrap" id="g-verkaeufe"></div>
     </div>
   </section>
 
@@ -684,6 +717,7 @@ async function statusLaden() {
   $("k-bar-unter").textContent = `in ${s.positionen.length} Wert${s.positionen.length === 1 ? "" : "en"} · Bargeld ${eur.format(s.bargeld)}`;
   marktZeigen(s);
   depotZeigen(s);
+  gewinneZeigen(s);
   const st = s.statistik;
   $("k-trades").textContent = st.anzahl;
   $("k-trades-unter").textContent = st.anzahl ? `${st.gewinn_trades} mit Gewinn (${Math.round((st.gewinn_trades / st.anzahl) * 100)} %) · Gebühren ${eur.format(st.gebuehren)}` : "Noch keine";
@@ -831,6 +865,91 @@ function depotZeigen(s) {
     }).join("") +
     `<tr class="summe"><td>Summe</td><td></td><td></td><td></td><td class="zahl">${eur.format(investiert)}</td><td class="zahl">${eur.format(wert)}</td>
       <td class="zahl">${tendenz(gv, vorzeichen(gv))}</td><td class="zahl">${((wert / depotwert) * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 })} %</td></tr>` +
+    `</tbody></table>`;
+}
+
+// ---------- Gewinne (rausgeholtes Geld) ----------
+function haltedauer(tage) {
+  if (tage == null) return "–";
+  if (tage < 1) return `${Math.max(1, Math.round(tage * 24))} Std.`;
+  return `${Math.round(tage)} Tag${Math.round(tage) === 1 ? "" : "e"}`;
+}
+
+function kalenderwoche(datum) { // ISO-Woche: Montag als Wochenanfang
+  const d = new Date(datum.slice(0, 10) + "T12:00:00");
+  const montag = new Date(d); montag.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const donnerstag = new Date(montag); donnerstag.setDate(montag.getDate() + 3);
+  const jahresanfang = new Date(donnerstag.getFullYear(), 0, 1);
+  const kw = 1 + Math.round(((donnerstag - jahresanfang) / 86400000 - 3 + ((jahresanfang.getDay() + 6) % 7)) / 7);
+  const freitag = new Date(montag); freitag.setDate(montag.getDate() + 4);
+  const tt = (x) => `${String(x.getDate()).padStart(2, "0")}.${String(x.getMonth() + 1).padStart(2, "0")}.`;
+  return { schluessel: `${donnerstag.getFullYear()}-${String(kw).padStart(2, "0")}`, text: `KW ${kw} (${tt(montag)}–${tt(freitag)})` };
+}
+
+function gewinneZeigen(s) {
+  const vk = s.verkaeufe || [];
+  const summe = vk.reduce((x, v) => x + v.gewinn, 0);
+  const plus = vk.filter((v) => v.gewinn > 0), minus = vk.filter((v) => v.gewinn <= 0);
+  const bester = vk.reduce((a, v) => (!a || v.gewinn > a.gewinn ? v : a), null);
+  const schlechtester = vk.reduce((a, v) => (!a || v.gewinn < a.gewinn ? v : a), null);
+  const kachel = (titel, inhalt, unter) => `<div class="kachel"><div class="titel">${titel}</div><div class="wert">${inhalt}</div><div class="unter">${unter}</div></div>`;
+  $("g-kacheln").innerHTML =
+    kachel("Fest gewonnen / verloren", vk.length ? tendenz(summe, vorzeichen(summe)) : "–",
+      vk.length ? `aus ${vk.length} Verkäufen · ${prozent.format(summe / s.startkapital)} vom Startkapital` : "noch nichts verkauft") +
+    kachel("Verkäufe", `${plus.length} <span style="font-size:15px;color:var(--text-secondary)">mit Gewinn</span>`,
+      `${minus.length} mit Verlust${vk.length ? ` · Trefferquote ${Math.round((plus.length / vk.length) * 100)} %` : ""}`) +
+    kachel("Bester Verkauf", bester ? tendenz(bester.gewinn, vorzeichen(bester.gewinn)) : "–", bester ? `${esc(bester.name)} · ${prozent.format(bester.prozent)}` : "") +
+    kachel("Schlechtester Verkauf", schlechtester ? tendenz(schlechtester.gewinn, vorzeichen(schlechtester.gewinn)) : "–",
+      schlechtester ? `${esc(schlechtester.name)} · ${prozent.format(schlechtester.prozent)}` : "");
+
+  if (!vk.length) {
+    delete charts["chart-gewinne"];
+    $("chart-gewinne").innerHTML = `<div class="leer">Der Bot hat noch nichts verkauft. Sobald er etwas verkauft, siehst du hier, wie viel er rausgeholt hat.</div>`;
+    ["g-wochen", "g-aktien", "g-verkaeufe"].forEach((id) => ($(id).innerHTML = `<div class="leer">Noch keine Verkäufe.</div>`));
+    return;
+  }
+
+  // Kurve: Summe nach jedem Verkauf, beginnend bei 0
+  let lauf = 0;
+  const punkte = [{ zeit: vk[0].kaufzeit || vk[0].verkaufzeit, wert: 0 }].concat(vk.map((v) => ({ zeit: v.verkaufzeit, wert: (lauf += v.gewinn) })));
+  linienChart("chart-gewinne", {
+    zeiten: punkte.map((p) => p.zeit),
+    serien: [{ name: "Fester Gewinn", kurz: "Gewinn", farbe: "--series-1", werte: punkte.map((p) => p.wert) }],
+    referenz: 0,
+  });
+
+  // Pro Woche
+  const wochen = {};
+  vk.forEach((v) => {
+    const w = kalenderwoche(v.verkaufzeit);
+    (wochen[w.schluessel] ||= { text: w.text, anzahl: 0, summe: 0 });
+    wochen[w.schluessel].anzahl++; wochen[w.schluessel].summe += v.gewinn;
+  });
+  $("g-wochen").innerHTML = `<table><thead><tr><th>Woche</th><th class="zahl">Verkäufe</th><th class="zahl">Gewinn / Verlust</th></tr></thead><tbody>` +
+    Object.keys(wochen).sort().reverse().map((k) => `<tr><td>${wochen[k].text}</td><td class="zahl">${wochen[k].anzahl}</td>
+      <td class="zahl">${tendenz(wochen[k].summe, vorzeichen(wochen[k].summe))}</td></tr>`).join("") + `</tbody></table>`;
+
+  // Pro Aktie
+  const aktien = {};
+  vk.forEach((v) => {
+    (aktien[v.ticker] ||= { name: v.name, gruppe: v.gruppe, anzahl: 0, summe: 0, tage: 0 });
+    aktien[v.ticker].anzahl++; aktien[v.ticker].summe += v.gewinn; aktien[v.ticker].tage += v.tage || 0;
+  });
+  $("g-aktien").innerHTML = `<table><thead><tr><th>Wert</th><th class="zahl">Verkäufe</th><th class="zahl">Ø gehalten</th><th class="zahl">Gewinn / Verlust</th></tr></thead><tbody>` +
+    Object.values(aktien).sort((a, b) => b.summe - a.summe).map((a) => `<tr><td>${esc(a.name)} <span class="art">${esc(a.gruppe)}</span></td>
+      <td class="zahl">${a.anzahl}</td><td class="zahl">${haltedauer(a.tage / a.anzahl)}</td>
+      <td class="zahl">${tendenz(a.summe, vorzeichen(a.summe))}</td></tr>`).join("") + `</tbody></table>`;
+
+  // Alle Verkäufe
+  $("g-verkaeufe").innerHTML = `<table><thead><tr><th>Wert</th><th>Gekauft</th><th>Verkauft</th><th class="zahl">Investiert</th><th class="zahl">Erlös</th><th class="zahl">Gewinn / Verlust</th><th class="zahl">Gehalten</th><th>Grund</th></tr></thead><tbody>` +
+    [...vk].reverse().map((v) => `<tr><td><strong>${esc(v.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${v.stueck} Stk.</span></td>
+      <td>${v.kaufzeit ? esc(zeitKurz(v.kaufzeit)) : "–"}<br><span style="color:var(--text-muted);font-size:12px">${v.kaufkurs ? eur.format(v.kaufkurs) : ""}</span></td>
+      <td>${esc(zeitKurz(v.verkaufzeit))}<br><span style="color:var(--text-muted);font-size:12px">${eur.format(v.verkaufkurs)}</span></td>
+      <td class="zahl">${eur.format(v.investiert)}</td><td class="zahl">${eur.format(v.erloes)}</td>
+      <td class="zahl">${tendenz(v.gewinn, vorzeichen(v.gewinn))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(v.prozent)}</span></td>
+      <td class="zahl">${haltedauer(v.tage)}</td><td class="grund">${esc(v.grund)}</td></tr>`).join("") +
+    `<tr class="summe"><td>Summe</td><td></td><td></td><td class="zahl">${eur.format(vk.reduce((x, v) => x + v.investiert, 0))}</td>
+      <td class="zahl">${eur.format(vk.reduce((x, v) => x + v.erloes, 0))}</td><td class="zahl">${tendenz(summe, vorzeichen(summe))}</td><td></td><td></td></tr>` +
     `</tbody></table>`;
 }
 
