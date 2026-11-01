@@ -14,7 +14,7 @@ VERLAUF_PUNKTE = 600
 def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list, protokoll: list, *,
                  bot_laeuft: bool, letzte_runde: str | None, autostart: bool, backtest: dict,
                  cloud: bool = False, pausiert: dict | None = None,
-                 verkauf_angefordert: str | None = None) -> dict:
+                 verkauf_angefordert: str | None = None, gewinnkonto: float = 0.0) -> dict:
     positionen = []
     for ticker, pos in positionen_roh.items():
         kurs = kurse.get(ticker) or pos["einstandskurs"]
@@ -31,7 +31,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
             "prozent": kurs / pos["einstandskurs"] - 1,
             "kaufzeit": pos["kaufzeit"][:16],
         })
-    depotwert = bargeld + sum(p["wert"] for p in positionen)
+    depotwert = bargeld + sum(p["wert"] for p in positionen) + gewinnkonto
 
     trades = trades_lesen(config.TRADES_DATEI)
     gewinne = [float(t["gewinn"]) for t in trades if t["art"] == "VERKAUF"]
@@ -63,7 +63,8 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         "letzte_runde": letzte_runde,
         "startkapital": config.STARTKAPITAL,
         "depotwert": depotwert,
-        "bargeld": bargeld,
+        "bargeld": bargeld,           # Handelsgeld (damit kauft der Bot)
+        "gewinnkonto": gewinnkonto,   # gesicherte Gewinne, werden nicht investiert
         "positionen": positionen,
         "ergebnis": {
             "gesamt": depotwert - config.STARTKAPITAL,

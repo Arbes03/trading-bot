@@ -17,6 +17,7 @@
     --text-muted: #7a7974;
     --series-1: #2a78d6;
     --series-2: #eb6834;
+    --series-3: #1baf7a;
     --good: #0ca30c;
     --critical: #d03b3b;
     --warning: #fab219;
@@ -37,6 +38,7 @@
       --text-muted: #8f8e86;
       --series-1: #3987e5;
       --series-2: #d95926;
+      --series-3: #199e70;
       --accent: #3987e5;
     }
   }
@@ -52,6 +54,7 @@
     --text-muted: #8f8e86;
     --series-1: #3987e5;
     --series-2: #d95926;
+    --series-3: #199e70;
     --accent: #3987e5;
   }
 
@@ -339,6 +342,9 @@
       <div class="kachel"><div class="titel">Depotwert</div><div class="wert" id="k-wert">–</div><div class="unter" id="k-wert-unter"></div></div>
       <div class="kachel"><div class="titel">Aktiv investiert</div><div class="wert" id="k-bar">–</div><div class="unter" id="k-bar-unter"></div>
         <button class="link-knopf" onclick="zeigeAnsicht('depot')">Details in „Mein Depot“ →</button></div>
+      <div class="kachel"><div class="titel">🔒 Gesicherte Gewinne</div><div class="wert" id="k-gesichert">–</div>
+        <div class="unter">zum Auszahlen bereit, wird nicht mehr investiert</div>
+        <button class="link-knopf" onclick="zeigeAnsicht('gewinne')">Details in „Gewinne“ →</button></div>
       <div class="kachel"><div class="titel">Abgeschlossene Trades</div><div class="wert" id="k-trades">–</div><div class="unter" id="k-trades-unter"></div></div>
     </div>
 
@@ -715,6 +721,7 @@ async function statusLaden() {
   const investiert = s.positionen.reduce((summe, p) => summe + p.wert, 0);
   $("k-bar").textContent = eur.format(investiert);
   $("k-bar-unter").textContent = `in ${s.positionen.length} Wert${s.positionen.length === 1 ? "" : "en"} · Bargeld ${eur.format(s.bargeld)}`;
+  $("k-gesichert").textContent = eur.format(s.gewinnkonto || 0);
   marktZeigen(s);
   depotZeigen(s);
   gewinneZeigen(s);
@@ -819,7 +826,7 @@ function ergebnisZeigen(s) {
 }
 
 // ---------- Mein Depot ----------
-const GRUPPEN_FARBE = { Aktie: "--series-1", ETF: "--series-2", Bargeld: "--text-muted" };
+const GRUPPEN_FARBE = { Aktie: "--series-1", ETF: "--series-2", Gesichert: "--series-3", Bargeld: "--text-muted" };
 
 function depotZeigen(s) {
   const pos = [...s.positionen].sort((a, b) => b.wert - a.wert);
@@ -831,7 +838,8 @@ function depotZeigen(s) {
     kachel("Investiert (Kaufpreis)", eur.format(investiert), `in ${pos.length} Wert${pos.length === 1 ? "" : "en"}`) +
     kachel("Aktueller Wert", eur.format(wert), "was die Positionen jetzt wert sind") +
     kachel("Gewinn / Verlust", pos.length ? tendenz(gv, vorzeichen(gv)) : "–", pos.length ? prozent.format(investiert ? gv / investiert : 0) + " auf den Kaufpreis" : "noch nichts investiert") +
-    kachel("Bargeld", eur.format(s.bargeld), "liegt bereit für neue Käufe");
+    kachel("Bargeld zum Handeln", eur.format(s.bargeld), "liegt bereit für neue Käufe") +
+    kachel("🔒 Gesicherte Gewinne", eur.format(s.gewinnkonto || 0), "zum Auszahlen, wird nicht investiert");
 
   // Aufteilung nach Art
   const teile = [
@@ -839,7 +847,8 @@ function depotZeigen(s) {
       anzahl: pos.filter((p) => p.gruppe === "Aktie").length },
     { name: "ETFs", gruppe: "ETF", wert: pos.filter((p) => p.gruppe === "ETF").reduce((x, p) => x + p.wert, 0),
       anzahl: pos.filter((p) => p.gruppe === "ETF").length },
-    { name: "Bargeld", gruppe: "Bargeld", wert: s.bargeld, anzahl: null },
+    { name: "Gesicherte Gewinne", gruppe: "Gesichert", wert: s.gewinnkonto || 0, anzahl: null },
+    { name: "Bargeld zum Handeln", gruppe: "Bargeld", wert: s.bargeld, anzahl: null },
   ];
   const gesamt = teile.reduce((x, t) => x + t.wert, 0) || 1;
   $("d-balken").setAttribute("aria-label", teile.map((t) => `${t.name} ${Math.round((t.wert / gesamt) * 100)} %`).join(", "));
@@ -894,6 +903,8 @@ function gewinneZeigen(s) {
   const schlechtester = vk.reduce((a, v) => (!a || v.gewinn < a.gewinn ? v : a), null);
   const kachel = (titel, inhalt, unter) => `<div class="kachel"><div class="titel">${titel}</div><div class="wert">${inhalt}</div><div class="unter">${unter}</div></div>`;
   $("g-kacheln").innerHTML =
+    kachel("🔒 Gesichert, bereit zum Auszahlen", eur.format(s.gewinnkonto || 0),
+      "alle Gewinne aus Verkäufen, werden nie wieder investiert") +
     kachel("Fest gewonnen / verloren", vk.length ? tendenz(summe, vorzeichen(summe)) : "–",
       vk.length ? `aus ${vk.length} Verkäufen · ${prozent.format(summe / s.startkapital)} vom Startkapital` : "noch nichts verkauft") +
     kachel("Verkäufe", `${plus.length} <span style="font-size:15px;color:var(--text-secondary)">mit Gewinn</span>`,

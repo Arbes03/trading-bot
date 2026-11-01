@@ -47,6 +47,17 @@ Kosten: 0 €. Du brauchst nur ein kostenloses GitHub-Konto.
 
 Gut zu wissen: GitHub startet geplante Läufe manchmal ein paar Minuten zu spät. Für diesen Bot ist das egal.
 
+### Gewinnkonto (gesicherte Gewinne)
+
+Verkauft der Bot eine Aktie **mit Gewinn**, legt er den **Gewinn** auf das Gewinnkonto. Den eingesetzten Betrag
+nutzt er weiter zum Handeln. Das Gewinnkonto wird **nie wieder investiert**; es ist das Geld, das man sich
+auszahlen lassen würde. Verluste gehen vom Handelsgeld ab, das Gewinnkonto bleibt unangetastet.
+Ausschalten: in `config.py` `GEWINNE_SICHERN = False`.
+
+Wichtig: Weil Gewinne beiseitegelegt und Verluste vom Handelsgeld abgezogen werden, kann das **Handelsgeld mit der Zeit
+schrumpfen**, auch wenn der Bot insgesamt im Plus ist. Im Backtest über 2 Jahre: insgesamt +8,2 % (statt +6,9 % ohne
+Gewinnkonto) und weniger Rückgang (8,9 % statt 12,1 %), aber am Ende nur noch ca. 4.570 € Handelsgeld und 6.260 € gesichert.
+
 ### Notbremse
 
 Fällt das Depot **5 % unter das Startkapital** (unter 9.500 €), verkauft der Bot **alles** und **pausiert**:

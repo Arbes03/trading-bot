@@ -180,7 +180,7 @@ def ntfy_senden(titel: str, text: str, tags: list[str] | None, prioritaet: int) 
         return False
 
 
-def trade_melden(trade: dict, depotwert: float):
+def trade_melden(trade: dict, depotwert: float, gewinnkonto: float = 0.0):
     name = config.WATCHLIST.get(trade["ticker"], trade["ticker"])
     betrag = trade["stueck"] * trade["kurs"]
     if trade["art"] == "KAUF":
@@ -190,9 +190,11 @@ def trade_melden(trade: dict, depotwert: float):
                tags=["shopping_cart"])
     else:
         gewinn = trade["gewinn"]
+        gesichert = (f"\n🔒 {eur(gewinn)} Gewinn gesichert, Gewinnkonto jetzt {eur(gewinnkonto)}"
+                     if gewinn > 0 and config.GEWINNE_SICHERN else "")
         senden(f"VERKAUF {name}: {eur(gewinn, vorzeichen=True)}",
                f"{trade['stueck']} Stück zu {eur(trade['kurs'])} = {eur(betrag)}\n"
-               f"Grund: {trade['grund']}\nDepot jetzt: {eur(depotwert)}",
+               f"Grund: {trade['grund']}{gesichert}\nDepot jetzt: {eur(depotwert)}",
                tags=["chart_with_upwards_trend" if gewinn > 0 else "chart_with_downwards_trend"])
 
 
@@ -256,7 +258,8 @@ def zusammenfassung(status: dict, datum: str) -> tuple[list[str], str]:
             zeilen.append(f"• {p['name']}: {eur(p['investiert'])} → {eur(p['wert'])} ({eur(p['gewinn'], vorzeichen=True)})")
     else:
         zeilen.append("Gerade nichts investiert.")
-    zeilen.append(f"Bargeld: {eur(status['bargeld'])}")
+    zeilen.append(f"Bargeld zum Handeln: {eur(status['bargeld'])}")
+    zeilen.append(f"🔒 Gesicherte Gewinne (zum Auszahlen): {eur(status.get('gewinnkonto', 0))}")
     heute = [t for t in status["trades"] if t["zeit"][:10] == datum]
     kaeufe = sum(t["art"] == "KAUF" for t in heute)
     verkaeufe = sum(t["art"] == "VERKAUF" for t in heute)

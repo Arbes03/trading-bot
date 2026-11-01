@@ -79,7 +79,7 @@ def main():
             notbremse_melden(depot.pausiert, depot.gesamtwert(kurse))
         elif config.NACHRICHT_BEI_TRADES:
             for trade in depot.trades:  # nur die Trades dieser Runde
-                trade_melden(trade, depot.gesamtwert(kurse))
+                trade_melden(trade, depot.gesamtwert(kurse), depot.gewinnkonto)
     else:
         print("Börse geschlossen, keine Prüfrunde.")
 
@@ -104,6 +104,7 @@ def main():
         cloud=True,
         pausiert=depot.pausiert,
         verkauf_angefordert=depot.verkauf_angefordert,
+        gewinnkonto=depot.gewinnkonto,
     )
     os.makedirs(AUSGABE_ORDNER, exist_ok=True)
     with open(os.path.join(AUSGABE_ORDNER, "status.json"), "w", encoding="utf-8") as f:

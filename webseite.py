@@ -98,6 +98,8 @@ def status() -> dict:
         autostart=os.path.exists(AUTOSTART_VERKNUEPFUNG),
         backtest={k: _backtest[k] for k in ("laeuft", "motor", "fehler")},
         pausiert=depot.pausiert,
+        verkauf_angefordert=depot.verkauf_angefordert,
+        gewinnkonto=depot.gewinnkonto,
     )
 
 

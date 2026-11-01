@@ -41,7 +41,7 @@ def wunsch_verkauf_pruefen(depot: Depot, kurse: dict[str, float], zeit) -> str |
         return None
     depot.verkauf_angefordert = None
     alles_verkaufen(depot, kurse, zeit, "Auf deinen Wunsch", "wunsch", "Du hast alles verkaufen lassen")
-    return f"VERKAUF AUF WUNSCH: alles verkauft, Bot pausiert. Depot: {depot.bargeld:,.2f} EUR"
+    return f"VERKAUF AUF WUNSCH: alles verkauft, Bot pausiert. Depot: {depot.gesamtwert({}):,.2f} EUR"
 
 
 def alles_verkaufen(depot: Depot, kurse: dict[str, float], zeit, grund: str, art: str, beschreibung: str):

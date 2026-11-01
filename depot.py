@@ -14,7 +14,8 @@ class Depot:
         # Ohne Datei (z. B. im Backtest) wird nichts gespeichert.
         self.datei = datei
         self.trades_datei = trades_datei
-        self.bargeld = config.STARTKAPITAL
+        self.bargeld = config.STARTKAPITAL  # Handelsgeld: damit kauft der Bot
+        self.gewinnkonto = 0.0              # gesicherte Gewinne: werden NIE wieder investiert
         self.positionen: dict[str, dict] = {}
         self.trades: list[dict] = []
         self.letzte_verkaeufe: dict[str, str] = {}      # ticker -> Zeitpunkt des letzten Verkaufs
@@ -25,6 +26,7 @@ class Depot:
             with open(datei, encoding="utf-8") as f:
                 daten = json.load(f)
             self.bargeld = daten["bargeld"]
+            self.gewinnkonto = daten.get("gewinnkonto", 0.0)
             self.positionen = daten["positionen"]
             self.letzte_verkaeufe = daten.get("letzte_verkaeufe", {})
             self.kaeufe_heute = daten.get("kaeufe_heute", self.kaeufe_heute)
@@ -43,6 +45,11 @@ class Depot:
         return True
 
     def gesamtwert(self, kurse: dict[str, float]) -> float:
+        """Alles zusammen: Handelsgeld, Aktien und gesicherte Gewinne."""
+        return self.handelswert(kurse) + self.gewinnkonto
+
+    def handelswert(self, kurse: dict[str, float]) -> float:
+        """Nur das Geld, mit dem der Bot handelt (ohne das Gewinnkonto)."""
         wert = self.bargeld
         for ticker, pos in self.positionen.items():
             wert += pos["stueck"] * kurse.get(ticker, pos["einstandskurs"])
@@ -54,7 +61,8 @@ class Depot:
         if ticker in self.positionen or len(self.positionen) >= max_positionen:
             return False
         kaufkurs = kurs * (1 + config.SPREAD / 2)
-        budget = min(depotwert * anteil,
+        # Der Anteil pro Aktie bezieht sich nur auf das Handelsgeld, das Gewinnkonto bleibt unangetastet
+        budget = min((depotwert - self.gewinnkonto) * anteil,
                      self.bargeld - config.GEBUEHR_PRO_ORDER)
         stueck = math.floor(budget / kaufkurs)
         if stueck < 1:
@@ -80,8 +88,13 @@ class Depot:
         pos = self.positionen.pop(ticker)
         verkaufskurs = kurs * (1 - config.SPREAD / 2)
         erloes = pos["stueck"] * verkaufskurs - config.GEBUEHR_PRO_ORDER
-        self.bargeld += erloes
         gewinn = erloes - pos["kosten"]
+        if gewinn > 0 and config.GEWINNE_SICHERN:
+            # Der Einsatz geht zurück ins Handelsgeld, der Gewinn wird beiseitegelegt
+            self.bargeld += erloes - gewinn
+            self.gewinnkonto += gewinn
+        else:
+            self.bargeld += erloes
         self.letzte_verkaeufe[ticker] = str(zeit)
         self._protokollieren(zeit, "VERKAUF", ticker, pos["stueck"], verkaufskurs, grund, gewinn)
         return gewinn
@@ -93,6 +106,7 @@ class Depot:
     def zuruecksetzen(self):
         """Alles auf Anfang: Startkapital, keine Positionen, Protokolle gelöscht."""
         self.bargeld = config.STARTKAPITAL
+        self.gewinnkonto = 0.0
         self.positionen = {}
         self.trades = []
         self.letzte_verkaeufe = {}
@@ -108,7 +122,7 @@ class Depot:
         if not self.datei:
             return
         with open(self.datei, "w", encoding="utf-8") as f:
-            json.dump({"bargeld": self.bargeld, "positionen": self.positionen,
+            json.dump({"bargeld": self.bargeld, "gewinnkonto": self.gewinnkonto, "positionen": self.positionen,
                        "letzte_verkaeufe": self.letzte_verkaeufe, "kaeufe_heute": self.kaeufe_heute,
                        "pausiert": self.pausiert, "verkauf_angefordert": self.verkauf_angefordert},
                       f, indent=2, ensure_ascii=False)
