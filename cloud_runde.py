@@ -122,8 +122,13 @@ def main():
         print(f"Willkommens-Nachricht gesendet ({wege}).")
     if config.NACHRICHT_TAGESABSCHLUSS:
         tagesabschluss_pruefen(jetzt, status, gemerkt)
-    # Zur Kontrolle (ohne Zugangsdaten): welche Wege eingerichtet sind und der letzte Fehler
+    zwischenstand_pruefen(jetzt, status, gemerkt)
+    # Zur Kontrolle (ohne Zugangsdaten): welche Wege eingerichtet sind, letzte Nachricht, letzter Fehler
     gemerkt["eingerichtet"] = wege or "keine"
+    if benachrichtigung.letzte_nachricht:
+        gemerkt["letzte_nachricht"] = f"{jetzt:%d.%m. %H:%M}: {benachrichtigung.letzte_nachricht}"
+        if not benachrichtigung.letzter_fehler:
+            gemerkt.pop("letzter_fehler", None)  # alter Fehler ist erledigt, es klappt wieder
     if benachrichtigung.letzter_fehler:
         gemerkt["letzter_fehler"] = f"{jetzt:%d.%m. %H:%M}: {benachrichtigung.letzter_fehler}"
     with open(config.BENACHRICHTIGUNG_DATEI, "w", encoding="utf-8") as f:
@@ -138,7 +143,8 @@ HILFE = ("Das kannst du mir schreiben:\n"
          "/weiter – ich handle wieder nach meinen Regeln\n"
          "/stand – ich schicke dir den aktuellen Stand\n"
          "/hilfe – diese Übersicht\n\n"
-         "Ich schaue Mo–Fr während der Börsenzeit etwa alle 15–40 Minuten nach neuen Nachrichten.")
+         "Ich lese deine Nachrichten täglich zwischen etwa 7 und 21 Uhr, je nach GitHub alle 15–60 Minuten. "
+         "Verkauft wird nur zur Börsenzeit (Mo–Fr 9:00–17:30).")
 
 
 def befehl_ausfuehren(befehl: str, depot: Depot, jetzt: datetime, melden) -> bool:
@@ -183,6 +189,19 @@ def gemerktes_laden() -> dict:
         return {}
     with open(config.BENACHRICHTIGUNG_DATEI, encoding="utf-8") as f:
         return json.load(f)
+
+
+def zwischenstand_pruefen(jetzt: datetime, status: dict, gemerkt: dict):
+    """An Handelstagen zu den eingestellten Uhrzeiten (z. B. 12:00) einmal den Stand schicken."""
+    if not eingerichtet() or not boerse_offen(jetzt):
+        return
+    heute = f"{jetzt:%Y-%m-%d}"
+    faellig = [u for u in config.ZWISCHENSTAND_UM if uhrzeit(jetzt) >= u]
+    if not faellig or gemerkt.get("zwischenstand") == f"{heute} {faellig[-1]}":
+        return
+    stand_melden(status, heute, titel=f"🕛 Zwischenstand {faellig[-1]} Uhr")
+    gemerkt["zwischenstand"] = f"{heute} {faellig[-1]}"
+    print("Zwischenstand gesendet.")
 
 
 def tagesabschluss_pruefen(jetzt: datetime, status: dict, gemerkt: dict):

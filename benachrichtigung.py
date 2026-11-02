@@ -21,8 +21,9 @@ import config
 
 CALLMEBOT_URL = "https://api.callmebot.com/whatsapp.php"
 
-# Letzte Fehlermeldung (ohne Zugangsdaten), wird zur Kontrolle in benachrichtigung.json gespeichert
+# Zur Kontrolle in benachrichtigung.json (ohne Zugangsdaten): letzte Fehlermeldung und letzte zugestellte Nachricht
 letzter_fehler = ""
+letzte_nachricht = ""
 
 
 def _fehler(text: str):
@@ -53,9 +54,12 @@ def eingerichtet() -> str:
 
 def senden(titel: str, text: str, tags: list[str] | None = None, prioritaet: int = 3) -> bool:
     """Schickt die Nachricht über alle eingerichteten Wege. True, wenn mindestens einer geklappt hat."""
+    global letzte_nachricht
     telegram = telegram_senden(titel, text)
     whatsapp = whatsapp_senden(titel, text)
     ntfy = ntfy_senden(titel, text, tags, prioritaet)
+    if telegram or whatsapp or ntfy:
+        letzte_nachricht = titel
     return telegram or whatsapp or ntfy
 
 
@@ -238,11 +242,11 @@ def tagesabschluss_melden(status: dict, datum: str):
            tags=["bar_chart"])
 
 
-def stand_melden(status: dict, datum: str):
+def stand_melden(status: dict, datum: str, titel: str = "📊 Stand jetzt"):
     zeilen, lage = zusammenfassung(status, datum)
     if status.get("notbremse", {}).get("aktiv"):
         zeilen.append("⏸️ Pausiert: Ich kaufe nichts, bis du /weiter schreibst.")
-    senden(f"📊 Stand jetzt: {lage} ({eur(status['ergebnis']['gesamt'], vorzeichen=True)})", "\n".join(zeilen),
+    senden(f"{titel}: {lage} ({eur(status['ergebnis']['gesamt'], vorzeichen=True)})", "\n".join(zeilen),
            tags=["bar_chart"])
 
 

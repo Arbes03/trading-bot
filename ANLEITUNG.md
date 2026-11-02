@@ -89,8 +89,11 @@ Der Bot schickt bei jedem Kauf und Verkauf eine Nachricht und jeden Handelstag n
 | `/stand` | Aktuellen Stand schicken |
 | `/hilfe` | Befehle anzeigen |
 
-Der Bot liest deine Nachrichten bei jedem Lauf, also Mo–Fr während der Börsenzeit etwa alle 15–40 Minuten.
-Abends und am Wochenende kommt die Antwort erst beim nächsten Lauf.
+Der Bot läuft täglich von etwa 7 bis 21 Uhr (auch am Wochenende) und liest deine Nachrichten bei jedem Lauf.
+GitHub startet die Läufe oft verspätet, rechne mit 15–60 Minuten bis zur Antwort. Verkauft wird nur zur Börsenzeit.
+
+**Automatische Nachrichten:** bei jedem Kauf und Verkauf, an Handelstagen um 12 Uhr ein Zwischenstand
+(`ZWISCHENSTAND_UM` in `config.py`) und nach Börsenschluss ein Tagesabschluss.
 
 Beim nächsten Lauf kommt die Nachricht „Trading-Bot verbunden ✅“. Ob es klappt, steht auch in der Datei
 `benachrichtigung.json` im Projekt (`eingerichtet` und ggf. `letzter_fehler`).

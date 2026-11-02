@@ -176,4 +176,5 @@ WEBSEITE_URL = "https://arbes03.github.io/trading-bot/"
 NTFY_SERVER = "https://ntfy.sh"
 NACHRICHT_BEI_TRADES = True        # bei jedem Kauf und Verkauf
 NACHRICHT_TAGESABSCHLUSS = True    # einmal pro Handelstag nach Börsenschluss
+ZWISCHENSTAND_UM = ["12:00"]       # zusätzliche Stand-Nachrichten an Handelstagen (deutsche Zeit), [] = keine
 BENACHRICHTIGUNG_DATEI = "benachrichtigung.json"  # merkt sich, wann der letzte Tagesabschluss kam

@@ -797,7 +797,8 @@ async function statusLaden() {
   $("nachrichten-text").innerHTML = !nWege
     ? "Noch nicht eingerichtet. Wie es geht, steht in der Anleitung (Abschnitt „Nachrichten aufs Handy“)."
     : n.willkommen
-      ? `<span class="tendenz plus">Aktiv über ${esc(nWege)}</span>: bei jedem Kauf und Verkauf und jeden Abend ein Tagesabschluss.`
+      ? `<span class="tendenz plus">Aktiv über ${esc(nWege)}</span>: bei jedem Kauf und Verkauf, mittags ein Zwischenstand und jeden Abend ein Tagesabschluss.` +
+        (n.letzte_nachricht ? `<br><span style="font-weight:400;color:var(--text-secondary)">Letzte Nachricht: ${esc(n.letzte_nachricht)}</span>` : "")
       : `<span class="tendenz minus">Eingerichtet (${esc(nWege)}), aber noch keine Nachricht zugestellt.</span>`;
   $("nachrichten-fehler").textContent = n.letzter_fehler && !n.willkommen ? `Letzte Meldung: ${n.letzter_fehler}` : "";
   $("autostart-text").innerHTML = s.autostart
