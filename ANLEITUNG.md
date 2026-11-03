@@ -121,6 +121,11 @@ Backtest-Ergebnisse (Stand 26.10.2026, ohne Steuern):
 | Vorsichtig | 2 Jahre | +5,7 % | +31,7 % | 12,4 % |
 | Offensiv | 2 Jahre | +3,5 % | +31,7 % | 28,9 % |
 
+**Getestete Verbesserungen (Nov. 2026, vorsichtiger Motor, 2 Jahre, ohne Notbremse):**
+Gold dazu −1,5 %, + Gewinnschutz ab +3 % −5,2 %, + Tauschen der schwächsten Position −7,5 %,
+Gewinnziel 5 % / 7 % −3,6 % / −7,6 %, gegenüber **+2,1 %** ohne diese Änderungen. Alle sind deshalb ausgeschaltet,
+lassen sich aber in `config.py` einschalten (`ROHSTOFFE_HANDELN`, `gewinnschutz_ab`, `tauschen`).
+
 Die Ergebnisse reagieren empfindlich auf kleine Änderungen (z. B. ein paar Tage anderer Zeitraum oder die
 Reihenfolge, in der Käufe geprüft werden). Ein früherer Lauf ergab für „Vorsichtig“ über 2 Jahre noch +13,5 %.
 

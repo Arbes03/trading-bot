@@ -49,7 +49,7 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
             kerzen = daten[ticker]
             # Die letzte Kerze läuft noch, Signale daher auf den abgeschlossenen Kerzen
             meldung = ticker_pruefen(depot, motor, ticker, kerzen[-2], kerzen[-3], kurse[ticker],
-                                     jetzt, darf_kaufen, depot.gesamtwert(kurse))
+                                     jetzt, darf_kaufen, depot.gesamtwert(kurse), kurse)
             if meldung:
                 meldungen.append(meldung)
 

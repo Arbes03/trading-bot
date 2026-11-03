@@ -52,7 +52,8 @@ def alles_verkaufen(depot: Depot, kurse: dict[str, float], zeit, grund: str, art
 
 
 def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorletzte: dict,
-                   kurs: float, zeit, darf_kaufen: bool, depotwert: float) -> str | None:
+                   kurs: float, zeit, darf_kaufen: bool, depotwert: float,
+                   kurse: dict[str, float] | None = None) -> str | None:
     """Prüft eine Aktie und handelt, falls nötig. Gibt eine Meldung zurück, wenn gehandelt wurde."""
     name = config.WATCHLIST.get(ticker, ticker)
 
@@ -69,7 +70,32 @@ def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorlet
 
     elif darf_kaufen and depot.darf_kaufen(ticker, zeit, motor):
         grund = kauf_signal(letzte, vorletzte, motor)
-        if grund and depot.kaufen(ticker, kurs, zeit, grund, depotwert, motor):
+        if not grund:
+            return None
+        meldungen = []
+        # Alle Plätze voll: schwächste Position tauschen, aber nur wenn sie nach Gebühren im Plus ist
+        if motor.tauschen and kurse is not None and len(depot.positionen) >= motor.positionen_hoechstens:
+            tausch = schwaechste_im_plus(depot, kurse)
+            if tausch:
+                stueck = depot.positionen[tausch]["stueck"]
+                gewinn = depot.verkaufen(tausch, kurse[tausch], zeit, f"Getauscht gegen {name}")
+                meldungen.append(f"VERKAUF {stueck} x {config.WATCHLIST.get(tausch, tausch)} zu "
+                                 f"{kurse[tausch]:.2f} EUR | {gewinn:+.2f} EUR | Getauscht gegen {name}")
+        if depot.kaufen(ticker, kurs, zeit, grund, depotwert, motor):
             stueck = depot.positionen[ticker]["stueck"]
-            return f"KAUF    {stueck} x {name} zu {kurs:.2f} EUR | {grund}"
+            meldungen.append(f"KAUF    {stueck} x {name} zu {kurs:.2f} EUR | {grund}")
+        return "\n".join(meldungen) or None
     return None
+
+
+def schwaechste_im_plus(depot: Depot, kurse: dict[str, float]) -> str | None:
+    """Die Position mit dem kleinsten Gewinn, die nach Spread und Gebühr trotzdem im Plus wäre."""
+    kandidaten = {}
+    for ticker, pos in depot.positionen.items():
+        if ticker not in kurse:
+            continue
+        erloes = pos["stueck"] * kurse[ticker] * (1 - config.SPREAD / 2) - config.GEBUEHR_PRO_ORDER
+        rendite = erloes / pos["kosten"] - 1
+        if rendite > 0:
+            kandidaten[ticker] = rendite
+    return min(kandidaten, key=kandidaten.get) if kandidaten else None

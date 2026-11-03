@@ -60,7 +60,7 @@ def backtest_ausfuehren(motor: Motor, ab: datetime | None = None, daten: dict | 
                 kerzen, i = daten[ticker], jetzt_da[ticker]
                 depotwert = depot.gesamtwert(kurse)
                 ticker_pruefen(depot, motor, ticker, kerzen[i], kerzen[i - 1], kurse[ticker], zeit,
-                               kaeufe_erlaubt(zeit, depotwert, tagesstart, motor), depotwert)
+                               kaeufe_erlaubt(zeit, depotwert, tagesstart, motor), depotwert, kurse)
             notbremse_pruefen(depot, kurse, zeit)
 
         if not startkurse:

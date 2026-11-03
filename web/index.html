@@ -18,6 +18,7 @@
     --series-1: #2a78d6;
     --series-2: #eb6834;
     --series-3: #1baf7a;
+    --series-4: #eda100;
     --good: #0ca30c;
     --critical: #d03b3b;
     --warning: #fab219;
@@ -39,6 +40,7 @@
       --series-1: #3987e5;
       --series-2: #d95926;
       --series-3: #199e70;
+      --series-4: #c98500;
       --accent: #3987e5;
     }
   }
@@ -55,6 +57,7 @@
     --series-1: #3987e5;
     --series-2: #d95926;
     --series-3: #199e70;
+    --series-4: #c98500;
     --accent: #3987e5;
   }
 
@@ -771,6 +774,8 @@ async function statusLaden() {
     `<strong>Verkaufen</strong> bei −${pz(m.stop_loss)} (Stop-Loss), bei +${pz(m.take_profit)} (Gewinnmitnahme) oder wenn der Kurs ${pz(m.trailing_stop)} unter sein Hoch seit dem Kauf fällt` +
       (m.verkauf_bei_trendwende ? ", oder wenn der kurze Trend nach unten dreht" : "") +
       (m.verkauf_unter_trend ? ", oder wenn der lange Trend bricht" : ""),
+    ...(m.gewinnschutz_ab ? [`🛡️ <strong>Gewinnschutz:</strong> War eine Aktie einmal <strong>+${pz(m.gewinnschutz_ab)}</strong> im Plus, verkauft der Bot sie spätestens knapp über dem Kaufpreis, damit aus dem Gewinn kein Verlust wird`] : []),
+    ...(m.tauschen ? [`🔄 <strong>Tauschen:</strong> Sind alle Plätze voll und kommt ein neues Kaufsignal, verkauft der Bot die schwächste Position, aber nur, wenn sie im Plus ist`] : []),
     m.nichts_ueber_nacht
       ? `Spätestens um <strong>${esc(e.alles_verkaufen_ab)} Uhr</strong> wird alles verkauft, nichts über Nacht`
       : `Darf Aktien <strong>über Nacht und mehrere Tage</strong> halten`,
@@ -827,7 +832,7 @@ function ergebnisZeigen(s) {
 }
 
 // ---------- Mein Depot ----------
-const GRUPPEN_FARBE = { Aktie: "--series-1", ETF: "--series-2", Gesichert: "--series-3", Bargeld: "--text-muted" };
+const GRUPPEN_FARBE = { Aktie: "--series-1", ETF: "--series-2", Gesichert: "--series-3", Rohstoff: "--series-4", Bargeld: "--text-muted" };
 
 function depotZeigen(s) {
   const pos = [...s.positionen].sort((a, b) => b.wert - a.wert);
@@ -848,6 +853,8 @@ function depotZeigen(s) {
       anzahl: pos.filter((p) => p.gruppe === "Aktie").length },
     { name: "ETFs", gruppe: "ETF", wert: pos.filter((p) => p.gruppe === "ETF").reduce((x, p) => x + p.wert, 0),
       anzahl: pos.filter((p) => p.gruppe === "ETF").length },
+    { name: "Gold / Rohstoffe", gruppe: "Rohstoff", wert: pos.filter((p) => p.gruppe === "Rohstoff").reduce((x, p) => x + p.wert, 0),
+      anzahl: pos.filter((p) => p.gruppe === "Rohstoff").length },
     { name: "Gesicherte Gewinne", gruppe: "Gesichert", wert: s.gewinnkonto || 0, anzahl: null },
     { name: "Bargeld zum Handeln", gruppe: "Bargeld", wert: s.bargeld, anzahl: null },
   ];
@@ -1012,6 +1019,7 @@ function marktZeigen(s) {
     ["investiert", "Investiert", zaehlen((m) => positionen[m.ticker])],
     ["Aktie", "Aktien (DAX)", zaehlen((m) => m.gruppe === "Aktie")],
     ["ETF", "ETFs", zaehlen((m) => m.gruppe === "ETF")],
+    ["Rohstoff", "Gold", zaehlen((m) => m.gruppe === "Rohstoff")],
   ].map(([wert, text, n]) => `<button class="chip" data-filter="${wert}" aria-pressed="${ansichtWerte.filter === wert}">${text}<span class="anzahl">${n}</span></button>`).join("");
 
   const auswahl = werteAuswaehlen(s.markt, positionen);

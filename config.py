@@ -64,8 +64,15 @@ ETFS = {
     "IS3N.DE": "iShares MSCI Schwellenländer",
 }
 
-WATCHLIST = {**DAX_AKTIEN, **ETFS}
-GRUPPE = {**{t: "Aktie" for t in DAX_AKTIEN}, **{t: "ETF" for t in ETFS}}
+# Rohstoffe: laufen oft anders als Aktien (Gold steigt häufig, wenn Aktien fallen)
+# Im Backtest (Nov. 2026) hat Gold das Ergebnis verschlechtert (2 Jahre: -1,5 % statt +2,1 %), daher aus.
+ROHSTOFFE_HANDELN = False
+ROHSTOFFE = {
+    "4GLD.DE": "Xetra-Gold",
+}
+
+WATCHLIST = {**DAX_AKTIEN, **ETFS, **(ROHSTOFFE if ROHSTOFFE_HANDELN else {})}
+GRUPPE = {**{t: "Aktie" for t in DAX_AKTIEN}, **{t: "ETF" for t in ETFS}, **{t: "Rohstoff" for t in ROHSTOFFE}}
 
 # --- Kosten (realistisch simuliert) ---
 GEBUEHR_PRO_ORDER = 1.00  # Euro pro Kauf bzw. Verkauf
@@ -103,6 +110,9 @@ MOTOREN = {
         nichts_ueber_nacht=False,
         sperre_stunden=24,           # nach Verkauf diese Aktie 24 h nicht wieder kaufen
         max_kaeufe_pro_tag=2,
+        # Weitere Möglichkeiten (im Backtest Nov. 2026 jeweils schlechter, daher aus):
+        # gewinnschutz_ab=0.03,      # ab +3 % im Plus nicht mehr unter den Kaufpreis fallen lassen
+        # tauschen=True,             # Plätze voll: schwächste Position (nur im Plus) gegen neuen Kandidaten tauschen
     ),
     "offensiv": dict(
         titel="Offensiv (Momentum)",

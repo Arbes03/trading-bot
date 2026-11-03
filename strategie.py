@@ -6,6 +6,9 @@ from dataclasses import dataclass
 import config
 
 
+GEWINNSCHUTZ_PUFFER = 0.005  # +0,5 % über Kaufpreis: deckt Verkaufsgebühr und Spread
+
+
 @dataclass(frozen=True)
 class Motor:
     name: str
@@ -33,6 +36,8 @@ class Motor:
     momentum_min: float = 0.0          # Mindestanstieg für einen Kauf
     max_anteil: float | None = None    # None = Wert aus config.MAX_ANTEIL_PRO_POSITION
     max_positionen: int | None = None  # None = Wert aus config.MAX_POSITIONEN
+    gewinnschutz_ab: float | None = None  # liegt eine Aktie so weit im Plus, wird der Stop auf den Kaufpreis gezogen
+    tauschen: bool = False             # Plätze voll + starker Kandidat: schwächste Position (nur im Plus) tauschen
 
     @property
     def anteil_pro_position(self) -> float:
@@ -150,6 +155,11 @@ def verkauf_grund(kurs: float, letzte: dict, vorletzte: dict, position: dict,
 
     if kurs <= einstand * (1 - motor.stop_loss):
         return f"Stop-Loss ({ergebnis})"
+    # Gewinnschutz: war die Aktie schon deutlich im Plus, wird sie spätestens knapp über dem Kaufpreis verkauft,
+    # damit aus einem Gewinn kein Verlust mehr wird (die Spanne deckt Gebühr und Spread)
+    if motor.gewinnschutz_ab and hoch >= einstand * (1 + motor.gewinnschutz_ab) \
+            and kurs <= einstand * (1 + GEWINNSCHUTZ_PUFFER):
+        return f"Gewinnschutz ({ergebnis})"
     if kurs >= einstand * (1 + motor.take_profit):
         return f"Gewinnmitnahme ({ergebnis})"
     if hoch > einstand and kurs <= hoch * (1 - motor.trailing_stop):
