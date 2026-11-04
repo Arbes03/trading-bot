@@ -3,11 +3,11 @@ name: Trading-Bot (Spielgeld)
 
 on:
   schedule:
-    # Alle 15 Minuten, jeden Tag, 6-19 Uhr UTC (= 7/8-20/21 Uhr deutscher Zeit).
-    # Gehandelt wird nur zur Xetra-Zeit (Mo-Fr 9:00-17:30). Die Läufe davor und danach schicken den
-    # Tagesabschluss und beantworten deine Telegram-Befehle (/stand, /verkaufen, ...) auch abends und am Wochenende.
-    # GitHub startet geplante Läufe oft verspätet, deshalb das großzügige Zeitfenster.
-    - cron: "*/15 6-19 * * *"
+    # Alle 15 Minuten, rund um die Uhr, jeden Tag.
+    # Aktien und ETFs werden nur zur Xetra-Zeit (Mo-Fr 9:00-17:30) gehandelt, Krypto jederzeit.
+    # Außerdem: Tagesabschluss und Antworten auf deine Telegram-Befehle (/stand, /verkaufen, ...).
+    # GitHub startet geplante Läufe oft verspätet (teils nur etwa einmal pro Stunde).
+    - cron: "*/15 * * * *"
   workflow_dispatch: # zum Ausprobieren: Actions -> Trading-Bot -> "Run workflow"
   push: # neuer Code -> Webseite sofort aktualisieren (Bot-Speicherungen lösen das nicht aus)
     branches: [main]

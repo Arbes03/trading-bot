@@ -19,6 +19,7 @@
     --series-2: #eb6834;
     --series-3: #1baf7a;
     --series-4: #eda100;
+    --series-5: #e87ba4;
     --good: #0ca30c;
     --critical: #d03b3b;
     --warning: #fab219;
@@ -41,6 +42,7 @@
       --series-2: #d95926;
       --series-3: #199e70;
       --series-4: #c98500;
+      --series-5: #d55181;
       --accent: #3987e5;
     }
   }
@@ -58,6 +60,7 @@
     --series-2: #d95926;
     --series-3: #199e70;
     --series-4: #c98500;
+    --series-5: #d55181;
     --accent: #3987e5;
   }
 
@@ -832,7 +835,7 @@ function ergebnisZeigen(s) {
 }
 
 // ---------- Mein Depot ----------
-const GRUPPEN_FARBE = { Aktie: "--series-1", ETF: "--series-2", Gesichert: "--series-3", Rohstoff: "--series-4", Bargeld: "--text-muted" };
+const GRUPPEN_FARBE = { Aktie: "--series-1", ETF: "--series-2", Gesichert: "--series-3", Rohstoff: "--series-4", Krypto: "--series-5", "US-Aktie": "--series-1", Bargeld: "--text-muted" };
 
 function depotZeigen(s) {
   const pos = [...s.positionen].sort((a, b) => b.wert - a.wert);
@@ -849,10 +852,12 @@ function depotZeigen(s) {
 
   // Aufteilung nach Art
   const teile = [
-    { name: "Aktien", gruppe: "Aktie", wert: pos.filter((p) => p.gruppe === "Aktie").reduce((x, p) => x + p.wert, 0),
-      anzahl: pos.filter((p) => p.gruppe === "Aktie").length },
+    { name: "Aktien (DAX + US)", gruppe: "Aktie", wert: pos.filter((p) => p.gruppe === "Aktie" || p.gruppe === "US-Aktie").reduce((x, p) => x + p.wert, 0),
+      anzahl: pos.filter((p) => p.gruppe === "Aktie" || p.gruppe === "US-Aktie").length },
     { name: "ETFs", gruppe: "ETF", wert: pos.filter((p) => p.gruppe === "ETF").reduce((x, p) => x + p.wert, 0),
       anzahl: pos.filter((p) => p.gruppe === "ETF").length },
+    { name: "Krypto", gruppe: "Krypto", wert: pos.filter((p) => p.gruppe === "Krypto").reduce((x, p) => x + p.wert, 0),
+      anzahl: pos.filter((p) => p.gruppe === "Krypto").length },
     { name: "Gold / Rohstoffe", gruppe: "Rohstoff", wert: pos.filter((p) => p.gruppe === "Rohstoff").reduce((x, p) => x + p.wert, 0),
       anzahl: pos.filter((p) => p.gruppe === "Rohstoff").length },
     { name: "Gesicherte Gewinne", gruppe: "Gesichert", wert: s.gewinnkonto || 0, anzahl: null },
@@ -1018,9 +1023,11 @@ function marktZeigen(s) {
     ["alle", "Alle", s.markt.length],
     ["investiert", "Investiert", zaehlen((m) => positionen[m.ticker])],
     ["Aktie", "Aktien (DAX)", zaehlen((m) => m.gruppe === "Aktie")],
+    ["US-Aktie", "US-Tech", zaehlen((m) => m.gruppe === "US-Aktie")],
     ["ETF", "ETFs", zaehlen((m) => m.gruppe === "ETF")],
+    ["Krypto", "Krypto", zaehlen((m) => m.gruppe === "Krypto")],
     ["Rohstoff", "Gold", zaehlen((m) => m.gruppe === "Rohstoff")],
-  ].map(([wert, text, n]) => `<button class="chip" data-filter="${wert}" aria-pressed="${ansichtWerte.filter === wert}">${text}<span class="anzahl">${n}</span></button>`).join("");
+  ].filter(([wert, , n]) => n > 0 || wert === "investiert").map(([wert, text, n]) => `<button class="chip" data-filter="${wert}" aria-pressed="${ansichtWerte.filter === wert}">${text}<span class="anzahl">${n}</span></button>`).join("");
 
   const auswahl = werteAuswaehlen(s.markt, positionen);
   if (!auswahl.length) {

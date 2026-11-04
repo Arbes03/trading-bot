@@ -65,7 +65,8 @@ def main():
         stand_gewuenscht |= befehl_ausfuehren(befehl, depot, jetzt, melden)
 
     kurse: dict[str, float] = {}
-    if boerse_offen(jetzt):
+    # Zur Börsenzeit wird alles geprüft, sonst nur Krypto (läuft rund um die Uhr)
+    if boerse_offen(jetzt) or any(config.rund_um_die_uhr(t) for t in config.WATCHLIST):
         motor = aktiver_motor()
         kurse, meldungen, anzahl = runde(depot, motor, tagesstart_ermitteln(jetzt))
         for m in meldungen:
@@ -143,8 +144,8 @@ HILFE = ("Das kannst du mir schreiben:\n"
          "/weiter – ich handle wieder nach meinen Regeln\n"
          "/stand – ich schicke dir den aktuellen Stand\n"
          "/hilfe – diese Übersicht\n\n"
-         "Ich lese deine Nachrichten täglich zwischen etwa 7 und 21 Uhr, je nach GitHub alle 15–60 Minuten. "
-         "Verkauft wird nur zur Börsenzeit (Mo–Fr 9:00–17:30).")
+         "Ich lese deine Nachrichten rund um die Uhr, je nach GitHub alle 15–60 Minuten. "
+         "Aktien und ETFs handle ich zur Börsenzeit (Mo–Fr 9:00–17:30), Krypto jederzeit.")
 
 
 def befehl_ausfuehren(befehl: str, depot: Depot, jetzt: datetime, melden) -> bool:
@@ -160,9 +161,9 @@ def befehl_ausfuehren(befehl: str, depot: Depot, jetzt: datetime, melden) -> boo
         if boerse_offen(jetzt):
             senden("👍 Verstanden: Ich verkaufe jetzt alles", "Die Bestätigung kommt gleich.")
         else:
-            senden("👍 Verstanden: Ich verkaufe alles, sobald die Börse öffnet",
-                   "Die Börse ist gerade geschlossen (Mo–Fr 9:00–17:30 Uhr). Danach pausiere ich, "
-                   "bis du /weiter schreibst. Abbrechen: /weiter")
+            senden("👍 Verstanden: Ich verkaufe alles",
+                   "Krypto verkaufe ich sofort. Aktien und ETFs verkaufe ich, sobald die Börse öffnet "
+                   "(Mo–Fr 9:00 Uhr). Danach pausiere ich, bis du /weiter schreibst. Abbrechen: /weiter")
     elif wort in BEFEHLE_WEITER:
         if depot.pausiert or depot.verkauf_angefordert:
             weiter_handeln(depot, melden)

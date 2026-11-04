@@ -64,8 +64,11 @@ class Depot:
         # Der Anteil pro Aktie bezieht sich nur auf das Handelsgeld, das Gewinnkonto bleibt unangetastet
         budget = min((depotwert - self.gewinnkonto) * anteil,
                      self.bargeld - config.GEBUEHR_PRO_ORDER)
-        stueck = math.floor(budget / kaufkurs)
-        if stueck < 1:
+        if config.GRUPPE.get(ticker) == "Krypto":
+            stueck = math.floor(budget / kaufkurs * 1e6) / 1e6  # Krypto: Bruchteile erlaubt (z. B. 0,03 BTC)
+        else:
+            stueck = math.floor(budget / kaufkurs)              # Aktien/ETFs: nur ganze Stücke
+        if stueck <= 0:
             return False
 
         kosten = stueck * kaufkurs + config.GEBUEHR_PRO_ORDER

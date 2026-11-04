@@ -64,6 +64,27 @@ ETFS = {
     "IS3N.DE": "iShares MSCI Schwellenländer",
 }
 
+# Große US-Technologie-Aktien, gehandelt über Xetra in Euro (gleiche Handelszeiten wie DAX)
+US_TECH = {
+    "NVD.DE": "Nvidia",
+    "APC.DE": "Apple",
+    "MSF.DE": "Microsoft",
+    "TL0.DE": "Tesla",
+    "AMZ.DE": "Amazon",
+    "ABEA.DE": "Alphabet (Google)",
+    "FB2A.DE": "Meta (Facebook)",
+    "AMD.DE": "AMD",
+}
+
+# Kryptowährungen: werden rund um die Uhr gehandelt, auch nachts und am Wochenende. Sehr starke Schwankungen.
+# Im Backtest (2 Jahre, Nov. 2026) brachte "DAX + ETFs + US-Tech + Krypto" +18,9 % statt -5,2 % (nur DAX + ETFs).
+KRYPTO = {
+    "BTC-EUR": "Bitcoin",
+    "ETH-EUR": "Ethereum",
+    "SOL-EUR": "Solana",
+    "XRP-EUR": "XRP",
+}
+
 # Rohstoffe: laufen oft anders als Aktien (Gold steigt häufig, wenn Aktien fallen)
 # Im Backtest (Nov. 2026) hat Gold das Ergebnis verschlechtert (2 Jahre: -1,5 % statt +2,1 %), daher aus.
 ROHSTOFFE_HANDELN = False
@@ -71,8 +92,14 @@ ROHSTOFFE = {
     "4GLD.DE": "Xetra-Gold",
 }
 
-WATCHLIST = {**DAX_AKTIEN, **ETFS, **(ROHSTOFFE if ROHSTOFFE_HANDELN else {})}
-GRUPPE = {**{t: "Aktie" for t in DAX_AKTIEN}, **{t: "ETF" for t in ETFS}, **{t: "Rohstoff" for t in ROHSTOFFE}}
+WATCHLIST = {**DAX_AKTIEN, **US_TECH, **ETFS, **KRYPTO, **(ROHSTOFFE if ROHSTOFFE_HANDELN else {})}
+GRUPPE = {**{t: "Aktie" for t in DAX_AKTIEN}, **{t: "US-Aktie" for t in US_TECH}, **{t: "ETF" for t in ETFS},
+          **{t: "Krypto" for t in KRYPTO}, **{t: "Rohstoff" for t in ROHSTOFFE}}
+
+
+def rund_um_die_uhr(ticker: str) -> bool:
+    """Krypto wird immer gehandelt, alles andere nur zur Xetra-Zeit."""
+    return GRUPPE.get(ticker) == "Krypto"
 
 # --- Kosten (realistisch simuliert) ---
 GEBUEHR_PRO_ORDER = 1.00  # Euro pro Kauf bzw. Verkauf

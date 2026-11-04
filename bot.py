@@ -28,20 +28,25 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
     Gibt (aktuelle Kurse, Meldungen, Anzahl Werte mit aktuellen Daten) zurück.
     """
     jetzt = datetime.now(ZONE)
-    geladen, fehler = fuer_alle(lambda t: kurse_laden(t, motor.zeitraum_live, motor), config.WATCHLIST)
+    # Zur Xetra-Zeit alles, sonst nur Krypto. Gehaltene Werte immer laden, damit der Depotwert stimmt.
+    handelbar = [t for t in config.WATCHLIST if boerse_offen(jetzt) or config.rund_um_die_uhr(t)]
+    laden = list(dict.fromkeys(handelbar + list(depot.positionen)))
+    geladen, fehler = fuer_alle(lambda t: kurse_laden(t, motor.zeitraum_live, motor), laden)
     meldungen = [f"Fehler beim Laden von {t}: {f}" for t, f in fehler.items()]
     # Feiertag oder Datenproblem: keine aktuellen Kurse, also nicht handeln
     max_alter = timedelta(minutes=motor.kerzen_minuten + 30)
-    daten = {t: k for t, k in geladen.items()
-             if len(k) >= motor.aufwaermen + 2 and jetzt - k[-1]["zeit"] <= max_alter}
+    daten = {t: k for t, k in geladen.items() if t in handelbar
+             and len(k) >= motor.aufwaermen + 2 and jetzt - k[-1]["zeit"] <= max_alter}
 
     # Laden dauert, gehandelt wird erst danach unter der Sperre
     with sperre or nullcontext():
         kurse = {t: p["einstandskurs"] for t, p in depot.positionen.items()}
-        kurse.update({t: k[-1]["close"] for t, k in daten.items()})
+        kurse.update({t: k[-1]["close"] for t, k in geladen.items() if k})  # letzter bekannter Kurs
+        handelbare_kurse = {t: kurse[t] for t in daten}                     # nur damit wird gehandelt
         darf_kaufen = kaeufe_erlaubt(jetzt, depot.gesamtwert(kurse), tagesstart, motor)
 
-        for meldung in (wunsch_verkauf_pruefen(depot, kurse, jetzt), notbremse_pruefen(depot, kurse, jetzt)):
+        for meldung in (wunsch_verkauf_pruefen(depot, handelbare_kurse, jetzt),
+                        notbremse_pruefen(depot, kurse, jetzt, handelbare_kurse)):
             if meldung:
                 meldungen.append(meldung)
         # Notbremse aktiv: nichts mehr handeln, bis du sie aufhebst
@@ -49,7 +54,7 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
             kerzen = daten[ticker]
             # Die letzte Kerze läuft noch, Signale daher auf den abgeschlossenen Kerzen
             meldung = ticker_pruefen(depot, motor, ticker, kerzen[-2], kerzen[-3], kurse[ticker],
-                                     jetzt, darf_kaufen, depot.gesamtwert(kurse), kurse)
+                                     jetzt, darf_kaufen, depot.gesamtwert(kurse), handelbare_kurse)
             if meldung:
                 meldungen.append(meldung)
 
@@ -92,7 +97,8 @@ class Bot:
         tag, tagesstart, geschlossen_gemeldet = None, self.depot.bargeld, False
         while not self._stop.is_set():
             jetzt = datetime.now(ZONE)
-            if not boerse_offen(jetzt):
+            krypto = any(config.rund_um_die_uhr(t) for t in config.WATCHLIST)
+            if not boerse_offen(jetzt) and not krypto:
                 if not geschlossen_gemeldet:
                     self.melden(f"Börse geschlossen, warte auf Öffnung "
                                 f"(Mo-Fr {config.BOERSE_AUF}-{config.BOERSE_ZU}) ...")

@@ -110,8 +110,12 @@ def telegram_befehle_holen(offset: int) -> tuple[list[str], int]:
     try:
         with urllib.request.urlopen(url, timeout=20) as antwort:
             updates = json.load(antwort).get("result", [])
+    except urllib.error.HTTPError as fehler:
+        beschreibung = json.loads(fehler.read() or b"{}").get("description", "")
+        _fehler(f"Telegram-Befehle konnten nicht abgeholt werden ({fehler.code}): {beschreibung}")
+        return [], offset
     except Exception as fehler:
-        print(f"Telegram-Befehle konnten nicht abgeholt werden: {type(fehler).__name__}")
+        _fehler(f"Telegram-Befehle konnten nicht abgeholt werden: {type(fehler).__name__}")
         return [], offset
     befehle = []
     for update in updates:

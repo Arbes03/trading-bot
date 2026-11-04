@@ -111,7 +111,7 @@ def verkaeufe_auswerten(trades: list[dict]) -> list[dict]:
             letzter_kauf[t["ticker"]] = t
             continue
         kauf = letzter_kauf.pop(t["ticker"], None)
-        stueck = int(t["stueck"])
+        stueck = float(t["stueck"])  # Krypto kann Bruchteile haben
         gewinn = float(t["gewinn"])
         erloes = stueck * float(t["kurs"]) - config.GEBUEHR_PRO_ORDER
         investiert = erloes - gewinn
