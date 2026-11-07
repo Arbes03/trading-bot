@@ -13,7 +13,8 @@ from datetime import datetime
 import benachrichtigung
 import config
 from benachrichtigung import (eingerichtet, notbremse_melden, senden, stand_melden, tagesabschluss_melden,
-                              telegram_befehle_holen, trade_melden, willkommen_melden, wunsch_verkauf_melden)
+                              telegram_befehle_holen, telegram_einrichten, trade_melden, willkommen_melden,
+                              wunsch_verkauf_melden)
 from bot import ZONE, boerse_offen, runde
 from handel import uhrzeit
 from daten import fuer_alle, marktueberblick
@@ -51,6 +52,12 @@ def main():
         print(text)
 
     gemerkt = gemerktes_laden()
+
+    # Einmalig in Telegram einrichten: Befehlsliste und Menü-Knopf "📊 Depot" (öffnet die Webseite)
+    einrichtung = f"v1 {config.WEBSEITE_URL}"
+    if gemerkt.get("telegram_einrichtung") != einrichtung and telegram_einrichten():
+        gemerkt["telegram_einrichtung"] = einrichtung
+        print("Telegram eingerichtet: Befehlsliste und Menü-Knopf.")
 
     # Freigabe nach der Notbremse: Datei notbremse_aufheben.txt bei GitHub anlegen
     if os.path.exists(FREIGABE_DATEI):
@@ -139,11 +146,14 @@ def main():
 BEFEHLE_VERKAUFEN = {"/verkaufen", "verkaufen", "alles verkaufen", "/raus", "raus"}
 BEFEHLE_WEITER = {"/weiter", "weiter"}
 BEFEHLE_STAND = {"/stand", "stand"}
+BEFEHLE_SEITE = {"/seite", "seite", "/webseite", "webseite", "link"}
 HILFE = ("Das kannst du mir schreiben:\n"
+         "/stand – ich schicke dir den aktuellen Stand\n"
+         "/seite – Link zur Webseite\n"
          "/verkaufen – ich verkaufe alle Aktien und pausiere\n"
          "/weiter – ich handle wieder nach meinen Regeln\n"
-         "/stand – ich schicke dir den aktuellen Stand\n"
          "/hilfe – diese Übersicht\n\n"
+         "Unten links im Chat öffnet der Knopf „📊 Depot“ die Webseite direkt hier in Telegram.\n\n"
          "Ich lese deine Nachrichten rund um die Uhr, je nach GitHub alle 15–60 Minuten. "
          "Aktien und ETFs handle ich zur Börsenzeit (Mo–Fr 9:00–17:30), Krypto jederzeit.")
 
@@ -171,6 +181,9 @@ def befehl_ausfuehren(befehl: str, depot: Depot, jetzt: datetime, melden) -> boo
             senden("Läuft schon", "Ich bin nicht pausiert und handle ganz normal.")
     elif wort in BEFEHLE_STAND:
         return True
+    elif wort in BEFEHLE_SEITE:
+        senden("🌐 Deine Webseite", "Hier siehst du alles im Detail: Cockpit, Depot, Gewinne und Kalender.\n"
+               "Tipp: Unten links im Chat öffnet der Knopf „📊 Depot“ die Seite direkt in Telegram.")
     else:
         senden("Hallo! 👋", HILFE)
     return False

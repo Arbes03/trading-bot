@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demo-Trading-Bot</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1362,6 +1363,13 @@ function backtestZeigen(e) {
 }
 
 // ---------- Start ----------
+// In Telegram geöffnet (Knopf "📊 Depot"): ganzen Bildschirm nutzen, Farben an den dunklen Look anpassen
+const telegramApp = window.Telegram && window.Telegram.WebApp;
+if (telegramApp && telegramApp.initData) {
+  telegramApp.ready();
+  telegramApp.expand();
+  try { telegramApp.setHeaderColor("#070b14"); telegramApp.setBackgroundColor("#070b14"); } catch (e) {}
+}
 try { const a = localStorage.getItem("ansicht"); if (a && $(a)) zeigeAnsicht(a); } catch (e) {}
 statusLaden();
 backtestAbfragen();

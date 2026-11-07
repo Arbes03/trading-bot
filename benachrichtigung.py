@@ -96,6 +96,44 @@ def telegram_senden(titel: str, text: str) -> bool:
     return False
 
 
+TELEGRAM_BEFEHLE = [
+    {"command": "stand", "description": "Aktuellen Stand schicken"},
+    {"command": "seite", "description": "Link zur Webseite"},
+    {"command": "verkaufen", "description": "Alles verkaufen und pausieren"},
+    {"command": "weiter", "description": "Pause aufheben, wieder handeln"},
+    {"command": "hilfe", "description": "Alle Befehle anzeigen"},
+]
+
+
+def telegram_einrichten() -> bool:
+    """Einmalig: Befehlsliste und Menü-Knopf "Depot" (öffnet die Webseite direkt in Telegram)."""
+    token = ohne_leerzeichen(os.environ.get("TELEGRAM_TOKEN", ""))
+    chat_id = ohne_leerzeichen(os.environ.get("TELEGRAM_CHAT_ID", ""))
+    if not (token and chat_id):
+        return False
+
+    def aufrufen(methode: str, daten: dict) -> bool:
+        anfrage = urllib.request.Request(f"https://api.telegram.org/bot{token}/{methode}",
+                                         data=json.dumps(daten).encode("utf-8"),
+                                         headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            with urllib.request.urlopen(anfrage, timeout=20) as antwort:
+                return json.load(antwort).get("ok", False)
+        except urllib.error.HTTPError as fehler:
+            beschreibung = json.loads(fehler.read() or b"{}").get("description", "")
+            _fehler(f"Telegram-Einrichtung ({methode}) abgelehnt ({fehler.code}): {beschreibung}")
+        except Exception as fehler:
+            _fehler(f"Telegram-Einrichtung ({methode}) fehlgeschlagen: {type(fehler).__name__}")
+        return False
+
+    befehle = aufrufen("setMyCommands", {"commands": TELEGRAM_BEFEHLE})
+    knopf = aufrufen("setChatMenuButton", {
+        "chat_id": chat_id,
+        "menu_button": {"type": "web_app", "text": "📊 Depot", "web_app": {"url": config.WEBSEITE_URL}},
+    })
+    return befehle and knopf
+
+
 def telegram_befehle_holen(offset: int) -> tuple[list[str], int]:
     """Neue Nachrichten an den Bot abholen. Nur Nachrichten aus DEINEM Chat zählen.
 
