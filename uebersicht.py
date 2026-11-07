@@ -1,7 +1,7 @@
 """Baut die Daten für die Webseite. Lokal (webseite.py) und in der Cloud (cloud_runde.py) gleich."""
 
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import config
 from bot import ZONE, boerse_offen
@@ -41,8 +41,9 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
     jetzt = datetime.now(ZONE)
     # Tagesergebnis: Vergleich mit dem letzten Depotwert vor heute
     heute = f"{jetzt:%Y-%m-%d}"
-    vor_heute = [v["wert"] for v in verlauf if v["zeit"][:10] < heute]
-    tagesstart = vor_heute[-1] if vor_heute else config.STARTKAPITAL
+    tagesstart = wert_vor(verlauf, heute)
+    wochenstart = wert_vor(verlauf, f"{jetzt - timedelta(days=jetzt.weekday()):%Y-%m-%d}")  # seit Montag
+    monatsstart = wert_vor(verlauf, f"{jetzt:%Y-%m}-01")
     realisiert_heute = sum(float(t["gewinn"]) for t in trades
                            if t["art"] == "VERKAUF" and t["zeit"][:10] == heute)
     return {
@@ -70,6 +71,10 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
             "gesamt": depotwert - config.STARTKAPITAL,
             "heute": depotwert - tagesstart,
             "heute_prozent": depotwert / tagesstart - 1,
+            "woche": depotwert - wochenstart,
+            "woche_prozent": depotwert / wochenstart - 1,
+            "monat": depotwert - monatsstart,
+            "monat_prozent": depotwert / monatsstart - 1,
             "offen": sum(p["gewinn"] for p in positionen),
             "realisiert": sum(gewinne),
             "realisiert_heute": realisiert_heute,
@@ -77,6 +82,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         "markt": markt,
         "trades": list(reversed(trades[-100:])),
         "verkaeufe": verkaeufe_auswerten(trades),
+        "tage": tagesergebnisse(verlauf, heute, depotwert),
         "statistik": {
             "anzahl": len(gewinne),
             "gewinn_trades": sum(g > 0 for g in gewinne),
@@ -100,6 +106,25 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         "backtest": backtest,
         "nachrichten": nachrichten_status(),
     }
+
+
+def wert_vor(verlauf: list[dict], datum: str) -> float:
+    """Letzter Depotwert vor diesem Datum (JJJJ-MM-TT), sonst das Startkapital."""
+    vorher = [v["wert"] for v in verlauf if v["zeit"][:10] < datum]
+    return vorher[-1] if vorher else config.STARTKAPITAL
+
+
+def tagesergebnisse(verlauf: list[dict], heute: str, depotwert: float, tage: int = 120) -> list[dict]:
+    """Gewinn/Verlust jedes Tages (Schlusswert minus Schlusswert des Vortags), für den Kalender."""
+    schluss: dict[str, float] = {}
+    for v in verlauf:
+        schluss[v["zeit"][:10]] = v["wert"]
+    schluss[heute] = depotwert  # heute mit dem aktuellen Wert
+    ergebnisse, vorher = [], config.STARTKAPITAL
+    for datum in sorted(schluss):
+        ergebnisse.append({"datum": datum, "wert": schluss[datum], "gv": schluss[datum] - vorher})
+        vorher = schluss[datum]
+    return ergebnisse[-tage:]
 
 
 def verkaeufe_auswerten(trades: list[dict]) -> list[dict]:

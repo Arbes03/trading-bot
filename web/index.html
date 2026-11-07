@@ -4,64 +4,61 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Demo-Trading-Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Dunkler Trading-Look (Standard). Hell nur, wenn data-theme="light" gesetzt ist. */
   :root {
+    color-scheme: dark;
+    --bg: #070b14;
+    --bg-glow: rgba(59, 130, 246, 0.10);
+    --surface-1: #0f1522;
+    --surface-2: #161e2f;
+    --surface-3: #1d2740;
+    --border: #212c43;
+    --grid: #1a2336;
+    --text-primary: #eef2f8;
+    --text-secondary: #a7b2c6;
+    --text-muted: #6c7890;
+    --series-1: #3b8cf0;
+    --series-2: #e8682f;
+    --series-3: #1fb985;
+    --series-4: #e0a11a;
+    --series-5: #e26a9a;
+    --good: #22c55e;
+    --good-glow: rgba(34, 197, 94, 0.28);
+    --critical: #f04848;
+    --critical-glow: rgba(240, 72, 72, 0.28);
+    --warning: #fab219;
+    --accent: #3b8cf0;
+    --accent-ink: #ffffff;
+    --radius: 14px;
+    --schatten: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  :root[data-theme="light"] {
     color-scheme: light;
-    --bg: #f4f4f2;
-    --surface-1: #fcfcfb;
-    --surface-2: #f0efec;
-    --border: #e2e1dc;
-    --grid: #ebeae6;
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted: #7a7974;
+    --bg: #f4f5f8;
+    --bg-glow: rgba(59, 130, 246, 0.06);
+    --surface-1: #ffffff;
+    --surface-2: #f1f3f7;
+    --surface-3: #e8ebf1;
+    --border: #e1e5ec;
+    --grid: #eceff4;
+    --text-primary: #0b0f19;
+    --text-secondary: #4f5869;
+    --text-muted: #7b8496;
     --series-1: #2a78d6;
     --series-2: #eb6834;
     --series-3: #1baf7a;
     --series-4: #eda100;
     --series-5: #e87ba4;
     --good: #0ca30c;
+    --good-glow: rgba(12, 163, 12, 0.18);
     --critical: #d03b3b;
-    --warning: #fab219;
+    --critical-glow: rgba(208, 59, 59, 0.18);
     --accent: #2a78d6;
-    --accent-ink: #ffffff;
-    --radius: 12px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --bg: #111110;
-      --surface-1: #1a1a19;
-      --surface-2: #232321;
-      --border: #2f2f2c;
-      --grid: #2a2a28;
-      --text-primary: #f0efec;
-      --text-secondary: #c3c2b7;
-      --text-muted: #8f8e86;
-      --series-1: #3987e5;
-      --series-2: #d95926;
-      --series-3: #199e70;
-      --series-4: #c98500;
-      --series-5: #d55181;
-      --accent: #3987e5;
-    }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #111110;
-    --surface-1: #1a1a19;
-    --surface-2: #232321;
-    --border: #2f2f2c;
-    --grid: #2a2a28;
-    --text-primary: #f0efec;
-    --text-secondary: #c3c2b7;
-    --text-muted: #8f8e86;
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --accent: #3987e5;
+    --schatten: 0 1px 2px rgba(15, 23, 42, 0.06), 0 6px 18px rgba(15, 23, 42, 0.05);
   }
 
   * { box-sizing: border-box; }
@@ -69,7 +66,11 @@
     margin: 0;
     background: var(--bg);
     color: var(--text-primary);
-    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background-image: radial-gradient(1200px 500px at 15% -10%, var(--bg-glow), transparent 60%);
+    background-attachment: fixed;
+    font: 15px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+    -webkit-font-smoothing: antialiased;
   }
   .seite { max-width: 1400px; margin: 0 auto; padding: 20px 16px 48px; }
 
@@ -131,41 +132,90 @@
   .cloud .nur-lokal, :root:not(.cloud) .nur-cloud { display: none !important; }
   .kacheln { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
   .kachel, .karte {
-    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--surface-1), color-mix(in srgb, var(--surface-1) 88%, var(--bg)));
+    border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--schatten);
   }
   .kachel { padding: 14px 16px; }
   .kachel .titel { font-size: 13px; color: var(--text-secondary); }
   .kachel .wert { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .kachel .unter { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
   .tendenz { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+  .tendenz.plus { color: var(--good); }
+  .tendenz.minus { color: var(--critical); }
   .tendenz::before { content: ""; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
   .tendenz.plus::before { border-bottom: 7px solid var(--good); }
   .tendenz.minus::before { border-top: 7px solid var(--critical); }
 
+  /* Cockpit: Kennzahlen-Leiste */
+  .cockpit-kpis { display: grid; grid-template-columns: minmax(260px, 1.7fr) repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .cockpit-kpis .kpi { padding: 14px 16px; }
+  .cockpit-kpis .kpi .wert { font-size: 22px; font-weight: 700; }
+  .cockpit-kpis .gesichert .wert { color: var(--series-3); }
   .ergebnis {
-    display: grid; grid-template-columns: minmax(240px, 1fr) 2fr; gap: 16px 24px; align-items: center;
-    background: var(--surface-1); border: 1px solid var(--border); border-left: 6px solid var(--text-muted);
-    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--surface-2), var(--surface-1));
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--schatten);
   }
-  .ergebnis.plus { border-left-color: var(--good); background: color-mix(in srgb, var(--good) 9%, var(--surface-1)); }
-  .ergebnis.minus { border-left-color: var(--critical); background: color-mix(in srgb, var(--critical) 9%, var(--surface-1)); }
-  .ergebnis-label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 650; }
+  .ergebnis.plus { border-color: color-mix(in srgb, var(--good) 45%, var(--border));
+    box-shadow: var(--schatten), 0 0 32px -8px var(--good-glow); }
+  .ergebnis.minus { border-color: color-mix(in srgb, var(--critical) 45%, var(--border));
+    box-shadow: var(--schatten), 0 0 32px -8px var(--critical-glow); }
+  .ergebnis-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
   .ergebnis-label .symbol {
-    width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center;
-    font-size: 12px; color: #fff; background: var(--text-muted); flex: none;
+    width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center;
+    font-size: 10px; color: #fff; background: var(--text-muted); flex: none;
   }
   .ergebnis.plus .symbol { background: var(--good); }
   .ergebnis.minus .symbol { background: var(--critical); }
-  .ergebnis-wert { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
-  .ergebnis-unter { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
-  .ergebnis-teile { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .ergebnis-teile > div { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
-  .ergebnis-teile .titel { font-size: 13px; color: var(--text-secondary); }
-  .ergebnis-teile .zahl { font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
-  .ergebnis-teile .klein { font-size: 12px; color: var(--text-muted); }
-  @media (max-width: 760px) {
-    .ergebnis { grid-template-columns: 1fr; }
-    .ergebnis-teile { grid-template-columns: 1fr; }
+  .ergebnis-wert { font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-top: 6px; }
+  .ergebnis.plus .ergebnis-wert { color: var(--good); text-shadow: 0 0 24px var(--good-glow); }
+  .ergebnis.minus .ergebnis-wert { color: var(--critical); text-shadow: 0 0 24px var(--critical-glow); }
+  .ergebnis-unter { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* Cockpit: zwei Spalten */
+  .cockpit { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: 16px; align-items: start; margin-bottom: 16px; }
+  .cockpit-links, .cockpit-rechts { min-width: 0; } /* sonst drückt die Kurve die Spalte breiter als den Bildschirm */
+  .cockpit .karte { margin-bottom: 16px; }
+  .cockpit-links > .karte:last-child, .cockpit-rechts > .karte:last-child { margin-bottom: 0; }
+  .karten-kopf h2 { margin: 0; }
+  .status-liste { margin: 8px 0 0; display: grid; gap: 0; }
+  .status-liste > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--grid); font-size: 14px; }
+  .status-liste > div:last-child { border-bottom: none; }
+  .status-liste dt { color: var(--text-secondary); }
+  .status-liste dd { margin: 0; text-align: right; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
+  .mini-zahlen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 12px; }
+  .mini-zahlen > div { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; }
+  .mini-zahlen span { font-size: 12px; color: var(--text-muted); }
+  .mini-zahlen strong { font-size: 16px; font-weight: 700; }
+  .mini-zahlen small { font-size: 11px; color: var(--text-muted); }
+
+  /* Gewinn-Kalender */
+  .kalender-nav { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+  .kalender-knopf { padding: 2px 10px; font-size: 16px; line-height: 1.4; border-radius: 8px; }
+  .kalender { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .kalender .wtag { font-size: 11px; color: var(--text-muted); text-align: center; padding-bottom: 2px; font-weight: 600; }
+  .kalender .tag {
+    min-height: 58px; border-radius: 8px; padding: 5px 6px; background: var(--surface-2);
+    border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between;
+    font-size: 11px; color: var(--text-muted); position: relative;
+  }
+  .kalender .tag.leer { background: transparent; border-color: transparent; }
+  .kalender .tag.heute { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .kalender .tag .betrag { font-size: 12px; font-weight: 700; color: var(--text-primary); text-align: right; white-space: nowrap; }
+  .kalender-legende { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+  .kalender-legende i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  @media (max-width: 1200px) {
+    .cockpit-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cockpit-kpis .ergebnis { grid-column: 1 / -1; }
+  }
+  @media (max-width: 1280px) { .cockpit { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) {
+    .cockpit-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cockpit-kpis .kpi:last-child { grid-column: 1 / -1; }
+    .ergebnis-wert { font-size: 32px; }
+    .kalender .tag { min-height: 46px; padding: 3px 4px; }
+    .kalender .tag .betrag { font-size: 10px; }
+    .mini-zahlen { grid-template-columns: 1fr 1fr 1fr; }
   }
 
   .notbremse {
@@ -331,27 +381,64 @@
         Oder im GitHub-Projekt auf <strong>Add file → Create new file</strong> klicken, als Namen <code>notbremse_aufheben.txt</code>
         eintragen (Inhalt egal) und <strong>Commit changes</strong> klicken.</div>
     </div>
-    <div class="ergebnis" id="ergebnis" aria-live="polite">
-      <div>
+    <!-- Kennzahlen-Leiste -->
+    <div class="cockpit-kpis">
+      <div class="ergebnis" id="ergebnis" aria-live="polite">
         <div class="ergebnis-label"><span class="symbol" id="e-symbol">●</span><span id="e-label">Lade …</span></div>
         <div class="ergebnis-wert" id="e-wert">–</div>
         <div class="ergebnis-unter" id="e-unter"></div>
       </div>
-      <div class="ergebnis-teile">
-        <div><div class="titel">Heute</div><div class="zahl" id="e-heute">–</div><div class="klein" id="e-heute-unter"></div></div>
-        <div><div class="titel">Offene Positionen</div><div class="zahl" id="e-offen">–</div><div class="klein">noch nicht verkauft, kann sich ändern</div></div>
-        <div><div class="titel">Verkaufte Trades</div><div class="zahl" id="e-real">–</div><div class="klein">fest, inkl. Gebühren</div></div>
-      </div>
+      <div class="kachel kpi"><div class="titel">Heute</div><div class="wert" id="e-heute">–</div><div class="unter" id="e-heute-unter"></div></div>
+      <div class="kachel kpi"><div class="titel">Diese Woche</div><div class="wert" id="e-woche">–</div><div class="unter" id="e-woche-unter"></div></div>
+      <div class="kachel kpi"><div class="titel">Dieser Monat</div><div class="wert" id="e-monat">–</div><div class="unter" id="e-monat-unter"></div></div>
+      <div class="kachel kpi gesichert"><div class="titel">🔒 Gesichert</div><div class="wert" id="k-gesichert">–</div>
+        <div class="unter">bereit zum Auszahlen</div></div>
+      <div class="kachel kpi"><div class="titel">Depotwert</div><div class="wert" id="k-wert">–</div><div class="unter" id="k-wert-unter"></div></div>
     </div>
 
-    <div class="kacheln">
-      <div class="kachel"><div class="titel">Depotwert</div><div class="wert" id="k-wert">–</div><div class="unter" id="k-wert-unter"></div></div>
-      <div class="kachel"><div class="titel">Aktiv investiert</div><div class="wert" id="k-bar">–</div><div class="unter" id="k-bar-unter"></div>
-        <button class="link-knopf" onclick="zeigeAnsicht('depot')">Details in „Mein Depot“ →</button></div>
-      <div class="kachel"><div class="titel">🔒 Gesicherte Gewinne</div><div class="wert" id="k-gesichert">–</div>
-        <div class="unter">zum Auszahlen bereit, wird nicht mehr investiert</div>
-        <button class="link-knopf" onclick="zeigeAnsicht('gewinne')">Details in „Gewinne“ →</button></div>
-      <div class="kachel"><div class="titel">Abgeschlossene Trades</div><div class="wert" id="k-trades">–</div><div class="unter" id="k-trades-unter"></div></div>
+    <div class="cockpit">
+      <div class="cockpit-links">
+        <div class="karte">
+          <div class="karten-kopf"><h2>Depotwert-Verlauf</h2><p class="hinweis">Gestrichelt: Startkapital</p></div>
+          <div class="chart" id="chart-verlauf"></div>
+        </div>
+        <div class="karte">
+          <div class="karten-kopf">
+            <h2>Gewinn-Kalender</h2>
+            <div class="kalender-nav">
+              <button class="kalender-knopf" id="kal-zurueck" aria-label="Vorheriger Monat">‹</button>
+              <span id="kal-monat">–</span>
+              <button class="kalender-knopf" id="kal-vor" aria-label="Nächster Monat">›</button>
+            </div>
+          </div>
+          <p class="hinweis" id="kal-summe"></p>
+          <div class="kalender" id="kalender"></div>
+          <div class="kalender-legende"><span><i style="background:var(--good)"></i>Gewinn</span>
+            <span><i style="background:var(--critical)"></i>Verlust</span><span>Beträge in €, gerundet (genau beim Drüberfahren)</span></div>
+        </div>
+      </div>
+
+      <div class="cockpit-rechts">
+        <div class="karte">
+          <h2>Bot-Status</h2>
+          <dl class="status-liste" id="status-liste"></dl>
+        </div>
+        <div class="karte">
+          <div class="karten-kopf"><h2>Offene Positionen</h2>
+            <button class="link-knopf" onclick="zeigeAnsicht('depot')">Mein Depot →</button></div>
+          <div class="mini-zahlen">
+            <div><span>Investiert</span><strong id="k-bar">–</strong><small id="k-bar-unter"></small></div>
+            <div><span>Offen</span><strong id="e-offen">–</strong><small>kann sich ändern</small></div>
+            <div><span>Fest</span><strong id="e-real">–</strong><small id="k-trades-unter"></small></div>
+          </div>
+          <div class="tabelle-wrap" id="positionen"></div>
+          <span id="k-trades" hidden></span>
+        </div>
+        <div class="karte">
+          <h2>Aktivität</h2>
+          <ul class="protokoll" id="protokoll"></ul>
+        </div>
+      </div>
     </div>
 
     <div class="karte">
@@ -377,24 +464,6 @@
       <div class="werte" id="markt"><div class="leer">Lade Kurse …</div></div>
     </div>
 
-    <div class="karte">
-      <h2>Depotwert-Verlauf</h2>
-      <p class="hinweis">Ein Punkt pro Prüfrunde (alle 5 Minuten während der Handelszeit). Gestrichelt: Startkapital.</p>
-      <div class="chart" id="chart-verlauf"></div>
-    </div>
-
-    <div class="zwei">
-      <div class="karte">
-        <h2>Offene Positionen</h2>
-        <p class="hinweis">Was der Bot gerade hält. Um 17:20 Uhr wird alles verkauft.</p>
-        <div class="tabelle-wrap" id="positionen"></div>
-      </div>
-      <div class="karte">
-        <h2>Aktivität</h2>
-        <p class="hinweis">Was der Bot zuletzt gemacht hat.</p>
-        <ul class="protokoll" id="protokoll"></ul>
-      </div>
-    </div>
   </section>
 
   <!-- MEIN DEPOT -->
@@ -757,9 +826,14 @@ async function statusLaden() {
       `</tbody></table>`
     : `<div class="leer">Keine offenen Positionen.</div>`;
 
-  $("protokoll").innerHTML = s.protokoll.length
-    ? s.protokoll.map((p) => `<li><time>${esc(p.zeit)}</time><span>${esc(p.text)}</span></li>`).join("")
+  // Wichtiges zuerst: Käufe, Verkäufe, Befehle. Die vielen "Prüfrunde fertig" nur, wenn sonst nichts da ist.
+  const wichtig = s.protokoll.filter((p) => !p.text.startsWith("Prüfrunde fertig"));
+  const eintraege = (wichtig.length ? wichtig : s.protokoll).slice(0, 15);
+  $("protokoll").innerHTML = eintraege.length
+    ? eintraege.map((p) => `<li><time>${esc(p.zeit)}</time><span>${esc(p.text)}</span></li>`).join("")
     : `<li class="leer">Noch nichts passiert.</li>`;
+  statusListeZeigen(s);
+  kalenderZeigen(s);
 
   $("alle-trades").innerHTML = tradesTabelle(s.trades);
 
@@ -829,9 +903,77 @@ function ergebnisZeigen(s) {
   $("e-unter").textContent = `${prozent.format(e.gesamt / s.startkapital)} seit Start mit ${eur.format(s.startkapital)} Spielgeld`;
   $("e-heute").innerHTML = tendenz(e.heute, vorzeichen(e.heute));
   $("e-heute-unter").textContent = `${prozent.format(e.heute_prozent)}` + (e.realisiert_heute ? ` · davon verkauft ${vorzeichen(e.realisiert_heute)}` : "");
+  $("e-woche").innerHTML = tendenz(e.woche, vorzeichen(e.woche));
+  $("e-woche-unter").textContent = `${prozent.format(e.woche_prozent)} seit Montag`;
+  $("e-monat").innerHTML = tendenz(e.monat, vorzeichen(e.monat));
+  $("e-monat-unter").textContent = `${prozent.format(e.monat_prozent)} seit dem 1.`;
   $("e-offen").innerHTML = s.positionen.length ? tendenz(e.offen, vorzeichen(e.offen)) : "–";
   $("e-real").innerHTML = s.statistik.anzahl ? tendenz(e.realisiert, vorzeichen(e.realisiert)) : "–";
   document.title = `${vorzeichen(e.gesamt)} · Demo-Trading-Bot`;
+}
+
+// ---------- Bot-Status ----------
+function statusListeZeigen(s) {
+  const e = s.einstellungen, nb = s.notbremse || {}, n = s.nachrichten || {};
+  const punkt = (gut) => `<span class="punkt ${gut ? "gut" : ""}"></span>`;
+  const zeilen = [
+    ["Bot", `${punkt(s.bot_laeuft && !nb.aktiv)}${nb.aktiv ? "pausiert" : s.cloud ? "läuft bei GitHub" : s.bot_laeuft ? "läuft" : "gestoppt"}`],
+    ["Motor", esc(e.motor.titel)],
+    ["Letzte Prüfung", esc(s.letzte_runde || "–")],
+    ["Börse (Aktien, ETFs)", `${punkt(s.boerse_offen)}${s.boerse_offen ? "offen" : "geschlossen"}`],
+    ["Krypto", `${punkt(true)}rund um die Uhr`],
+    ["Plätze belegt", `${s.positionen.length} von ${e.motor.max_positionen || e.max_positionen}`],
+    ["Telegram", n.eingerichtet && n.eingerichtet !== "keine" ? `${punkt(!!n.willkommen)}${n.willkommen ? "aktiv" : "eingerichtet"}` : "aus"],
+    ["Notbremse", nb.aktiv ? `<span class="tendenz minus">ausgelöst</span>` : `bei ${eur.format(nb.grenze || 0)}`],
+  ];
+  $("status-liste").innerHTML = zeilen.map(([dt, dd]) => `<div><dt>${dt}</dt><dd>${dd}</dd></div>`).join("");
+}
+
+// ---------- Gewinn-Kalender ----------
+let kalenderMonat = null; // "JJJJ-MM", null = aktueller Monat
+$("kal-zurueck").addEventListener("click", () => kalenderBlaettern(-1));
+$("kal-vor").addEventListener("click", () => kalenderBlaettern(1));
+function kalenderBlaettern(richtung) {
+  const [j, m] = (kalenderMonat || new Date().toISOString().slice(0, 7)).split("-").map(Number);
+  const d = new Date(j, m - 1 + richtung, 1);
+  kalenderMonat = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  if (letzterStatus) kalenderZeigen(letzterStatus);
+}
+
+function kalenderZeigen(s) {
+  const tage = Object.fromEntries((s.tage || []).map((t) => [t.datum, t]));
+  const heute = new Date();
+  const heuteText = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}-${String(heute.getDate()).padStart(2, "0")}`;
+  const monat = kalenderMonat || heuteText.slice(0, 7);
+  const [j, m] = monat.split("-").map(Number);
+  const erster = new Date(j, m - 1, 1), tageImMonat = new Date(j, m, 0).getDate();
+  $("kal-monat").textContent = erster.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  const imMonat = Object.values(tage).filter((t) => t.datum.startsWith(monat));
+  const max = Math.max(1, ...imMonat.map((t) => Math.abs(t.gv)));
+  const summe = imMonat.reduce((x, t) => x + t.gv, 0);
+  const plusTage = imMonat.filter((t) => t.gv > 0.005).length, minusTage = imMonat.filter((t) => t.gv < -0.005).length;
+  $("kal-summe").innerHTML = imMonat.length
+    ? `Monat: ${tendenz(summe, vorzeichen(summe))} · ${plusTage} Tage im Plus, ${minusTage} im Minus`
+    : "In diesem Monat noch keine Daten.";
+  let html = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => `<div class="wtag">${w}</div>`).join("");
+  html += `<div class="tag leer"></div>`.repeat((erster.getDay() + 6) % 7); // Montag als erster Tag
+  for (let d = 1; d <= tageImMonat; d++) {
+    const datum = `${monat}-${String(d).padStart(2, "0")}`;
+    const t = tage[datum];
+    let stil = "", betrag = "", titel = datum.split("-").reverse().join(".");
+    if (t && Math.abs(t.gv) > 0.005) {
+      const staerke = Math.round(18 + 62 * Math.min(1, Math.abs(t.gv) / max)); // 18–80 % Farbe
+      stil = `background:color-mix(in srgb, var(${t.gv > 0 ? "--good" : "--critical"}) ${staerke}%, var(--surface-2));` +
+             `border-color:color-mix(in srgb, var(${t.gv > 0 ? "--good" : "--critical"}) ${staerke}%, var(--border))`;
+      betrag = (t.gv > 0 ? "+" : "−") + Math.round(Math.abs(t.gv)).toLocaleString("de-DE");
+      titel += `: ${vorzeichen(t.gv)} · Depot ${eur.format(t.wert)}`;
+    } else if (t) {
+      betrag = "±0"; titel += ": unverändert";
+    }
+    html += `<div class="tag${datum === heuteText ? " heute" : ""}" style="${stil}" title="${esc(titel)}">
+      <span>${d}</span><span class="betrag">${esc(betrag)}</span></div>`;
+  }
+  $("kalender").innerHTML = html;
 }
 
 // ---------- Mein Depot ----------

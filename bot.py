@@ -59,7 +59,10 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
                 meldungen.append(meldung)
 
         depot.speichern()
-        verlauf_eintragen(config.VERLAUF_DATEI, jetzt, depot.gesamtwert(kurse))
+        # Nur eintragen, wenn alle gehaltenen Werte einen Kurs haben. Sonst würde die Verlaufskurve
+        # bei einem Yahoo-Ausfall falsche Zacken zeigen (Bewertung zum Kaufpreis).
+        if all(t in geladen and geladen[t] for t in depot.positionen):
+            verlauf_eintragen(config.VERLAUF_DATEI, jetzt, depot.gesamtwert(kurse))
     return kurse, meldungen, len(daten)
 
 
