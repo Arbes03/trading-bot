@@ -77,7 +77,7 @@ def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorlet
         if grund:
             stueck = depot.positionen[ticker]["stueck"]
             gewinn = depot.verkaufen(ticker, kurs, zeit, grund)
-            return f"VERKAUF {stueck} x {name} zu {kurs:.2f} EUR | {gewinn:+.2f} EUR | {grund}"
+            return f"VERKAUF {stueck:g} x {name} zu {kurs:.2f} EUR | {gewinn:+.2f} EUR | {grund}"
         depot.hoechstkurs_aktualisieren(ticker, kurs)
 
     elif darf_kaufen and depot.darf_kaufen(ticker, zeit, motor):
@@ -91,11 +91,11 @@ def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorlet
             if tausch:
                 stueck = depot.positionen[tausch]["stueck"]
                 gewinn = depot.verkaufen(tausch, kurse[tausch], zeit, f"Getauscht gegen {name}")
-                meldungen.append(f"VERKAUF {stueck} x {config.WATCHLIST.get(tausch, tausch)} zu "
+                meldungen.append(f"VERKAUF {stueck:g} x {config.WATCHLIST.get(tausch, tausch)} zu "
                                  f"{kurse[tausch]:.2f} EUR | {gewinn:+.2f} EUR | Getauscht gegen {name}")
         if depot.kaufen(ticker, kurs, zeit, grund, depotwert, motor):
             stueck = depot.positionen[ticker]["stueck"]
-            meldungen.append(f"KAUF    {stueck} x {name} zu {kurs:.2f} EUR | {grund}")
+            meldungen.append(f"KAUF    {stueck:g} x {name} zu {kurs:.2f} EUR | {grund}")
         return "\n".join(meldungen) or None
     return None
 

@@ -2,7 +2,7 @@
 # Hier kannst du alles anpassen, ohne den restlichen Code anzufassen.
 
 # --- Spielgeld ---
-STARTKAPITAL = 10_000.00  # Euro
+STARTKAPITAL = 500.00  # Euro (Neustart am 07.11.2026, vorher 10.000 EUR)
 
 # --- Was beobachtet wird (Yahoo-Finance-Kürzel, ".DE" = Xetra) ---
 # Neutrale Auswahl: alle DAX-Werte plus große Index-ETFs. Keine Empfehlung.
@@ -100,6 +100,10 @@ GRUPPE = {**{t: "Aktie" for t in DAX_AKTIEN}, **{t: "US-Aktie" for t in US_TECH}
 def rund_um_die_uhr(ticker: str) -> bool:
     """Krypto wird immer gehandelt, alles andere nur zur Xetra-Zeit."""
     return GRUPPE.get(ticker) == "Krypto"
+
+# Bruchstücke von Aktien/ETFs erlauben (bieten viele Broker an). Wichtig bei kleinem Startkapital,
+# sonst kann der Bot teure Aktien (z. B. Allianz ~430 EUR) gar nicht kaufen. Krypto immer in Bruchteilen.
+BRUCHSTUECKE = True
 
 # --- Kosten (realistisch simuliert) ---
 GEBUEHR_PRO_ORDER = 1.00  # Euro pro Kauf bzw. Verkauf

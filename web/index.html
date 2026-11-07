@@ -611,6 +611,7 @@ const eurKurz = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 const prozent = new Intl.NumberFormat("de-DE", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: "always" });
 const vorzeichen = (x) => (x > 0 ? "+" : x < 0 ? "−" : "±") + eur.format(Math.abs(x));
 const $ = (id) => document.getElementById(id);
+const stk = (x) => Number(x).toLocaleString("de-DE", { maximumFractionDigits: 4 }); // Stückzahl, auch Bruchstücke
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 function tendenz(x, text) {
@@ -753,7 +754,7 @@ function tradesTabelle(trades) {
     trades.map((t) => {
       const g = t.gewinn === "" || t.gewinn == null ? null : Number(t.gewinn);
       return `<tr><td>${esc(zeitKurz(t.zeit))}</td><td><span class="art">${esc(t.art)}</span></td><td>${esc(t.ticker)}</td>
-        <td class="zahl">${esc(t.stueck)}</td><td class="zahl">${eur.format(Number(t.kurs))}</td>
+        <td class="zahl">${stk(t.stueck)}</td><td class="zahl">${eur.format(Number(t.kurs))}</td>
         <td class="zahl">${g == null ? "" : tendenz(g, vorzeichen(g))}</td><td class="grund">${esc(t.grund)}</td></tr>`;
     }).join("") + `</tbody></table>`;
 }
@@ -818,7 +819,7 @@ async function statusLaden() {
 
   $("positionen").innerHTML = s.positionen.length
     ? `<table><thead><tr><th>Wert</th><th class="zahl">Investiert</th><th class="zahl">Jetzt wert</th><th class="zahl">Gewinn / Verlust</th></tr></thead><tbody>` +
-      s.positionen.map((p) => `<tr><td><strong>${esc(p.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${p.stueck} Stk. zu ${eur.format(p.einstandskurs)}</span></td>
+      s.positionen.map((p) => `<tr><td><strong>${esc(p.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${stk(p.stueck)} Stk. zu ${eur.format(p.einstandskurs)}</span></td>
         <td class="zahl"><strong>${eur.format(p.investiert)}</strong></td><td class="zahl">${eur.format(p.wert)}</td>
         <td class="zahl">${tendenz(p.gewinn, vorzeichen(p.gewinn))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(p.prozent)}</span></td></tr>`).join("") +
       `<tr class="summe"><td>Summe</td><td class="zahl">${eur.format(s.positionen.reduce((x, p) => x + p.investiert, 0))}</td>
@@ -1023,7 +1024,7 @@ function depotZeigen(s) {
     pos.map((p) => {
       const anteil = p.wert / depotwert;
       return `<tr><td><strong>${esc(p.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${esc(p.ticker)} · seit ${esc(zeitKurz(p.kaufzeit))}</span></td>
-        <td><span class="art">${esc(p.gruppe)}</span></td><td class="zahl">${p.stueck}</td><td class="zahl">${eur.format(p.einstandskurs)}</td>
+        <td><span class="art">${esc(p.gruppe)}</span></td><td class="zahl">${stk(p.stueck)}</td><td class="zahl">${eur.format(p.einstandskurs)}</td>
         <td class="zahl">${eur.format(p.investiert)}</td><td class="zahl">${eur.format(p.wert)}</td>
         <td class="zahl">${tendenz(p.gewinn, vorzeichen(p.gewinn))}<br><span style="color:var(--text-muted);font-size:12px">${prozent.format(p.investiert ? p.gewinn / p.investiert : 0)}</span></td>
         <td class="zahl"><div class="anteil"><div class="balken"><div style="width:${(anteil * 100).toFixed(1)}%;background:var(${GRUPPEN_FARBE[p.gruppe]})"></div></div>${(anteil * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 })} %</div></td></tr>`;
@@ -1109,7 +1110,7 @@ function gewinneZeigen(s) {
 
   // Alle Verkäufe
   $("g-verkaeufe").innerHTML = `<table><thead><tr><th>Wert</th><th>Gekauft</th><th>Verkauft</th><th class="zahl">Investiert</th><th class="zahl">Erlös</th><th class="zahl">Gewinn / Verlust</th><th class="zahl">Gehalten</th><th>Grund</th></tr></thead><tbody>` +
-    [...vk].reverse().map((v) => `<tr><td><strong>${esc(v.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${v.stueck} Stk.</span></td>
+    [...vk].reverse().map((v) => `<tr><td><strong>${esc(v.name)}</strong><br><span style="color:var(--text-muted);font-size:12px">${stk(v.stueck)} Stk.</span></td>
       <td>${v.kaufzeit ? esc(zeitKurz(v.kaufzeit)) : "–"}<br><span style="color:var(--text-muted);font-size:12px">${v.kaufkurs ? eur.format(v.kaufkurs) : ""}</span></td>
       <td>${esc(zeitKurz(v.verkaufzeit))}<br><span style="color:var(--text-muted);font-size:12px">${eur.format(v.verkaufkurs)}</span></td>
       <td class="zahl">${eur.format(v.investiert)}</td><td class="zahl">${eur.format(v.erloes)}</td>
@@ -1194,7 +1195,7 @@ function marktZeigen(s) {
         <div style="display:flex;justify-content:space-between;gap:8px"><span>Investiert</span><strong>${eur.format(p.investiert)}</strong></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><span>Jetzt wert</span><span>${eur.format(p.wert)}</span></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><span>Gewinn / Verlust</span>${tendenz(p.gewinn, `${vorzeichen(p.gewinn)} (${prozent.format(p.prozent)})`)}</div>
-        <div class="klein">${p.stueck} Stk. zu ${eur.format(p.einstandskurs)} · gekauft ${esc(zeitKurz(p.kaufzeit))} Uhr</div></div>` : ""}
+        <div class="klein">${stk(p.stueck)} Stk. zu ${eur.format(p.einstandskurs)} · gekauft ${esc(zeitKurz(p.kaufzeit))} Uhr</div></div>` : ""}
     </div>`;
   }).join("");
 

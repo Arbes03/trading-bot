@@ -32,6 +32,12 @@ def _fehler(text: str):
     print(text)
 
 
+def stk(anzahl: float) -> str:
+    """Stückzahl: 12 oder 0,4651 (Bruchstücke) in deutscher Schreibweise."""
+    anzahl = float(anzahl)
+    return f"{anzahl:.0f}" if anzahl == int(anzahl) else f"{anzahl:.4f}".rstrip("0").replace(".", ",")
+
+
 def eur(betrag: float, vorzeichen: bool = False) -> str:
     """1958.49 -> '1.958,49 €' (deutsche Schreibweise)."""
     text = f"{abs(betrag) if vorzeichen else betrag:,.2f}".replace(",", " ").replace(".", ",").replace(" ", ".")
@@ -231,7 +237,7 @@ def trade_melden(trade: dict, depotwert: float, gewinnkonto: float = 0.0):
     betrag = trade["stueck"] * trade["kurs"]
     if trade["art"] == "KAUF":
         senden(f"KAUF {name}",
-               f"{trade['stueck']} Stück zu {eur(trade['kurs'])} = {eur(betrag)} investiert\n"
+               f"{stk(trade['stueck'])} Stück zu {eur(trade['kurs'])} = {eur(betrag)} investiert\n"
                f"Grund: {trade['grund']}\nDepot jetzt: {eur(depotwert)}",
                tags=["shopping_cart"])
     else:
@@ -239,7 +245,7 @@ def trade_melden(trade: dict, depotwert: float, gewinnkonto: float = 0.0):
         gesichert = (f"\n🔒 {eur(gewinn)} Gewinn gesichert, Gewinnkonto jetzt {eur(gewinnkonto)}"
                      if gewinn > 0 and config.GEWINNE_SICHERN else "")
         senden(f"VERKAUF {name}: {eur(gewinn, vorzeichen=True)}",
-               f"{trade['stueck']} Stück zu {eur(trade['kurs'])} = {eur(betrag)}\n"
+               f"{stk(trade['stueck'])} Stück zu {eur(trade['kurs'])} = {eur(betrag)}\n"
                f"Grund: {trade['grund']}{gesichert}\nDepot jetzt: {eur(depotwert)}",
                tags=["chart_with_upwards_trend" if gewinn > 0 else "chart_with_downwards_trend"])
 
@@ -256,7 +262,7 @@ def notbremse_melden(pausiert: dict, depotwert: float):
 def wunsch_verkauf_melden(trades: list[dict], depotwert: float):
     verkaeufe = [t for t in trades if t["art"] == "VERKAUF"]
     summe = sum(t["gewinn"] for t in verkaeufe)
-    zeilen = [f"• {config.WATCHLIST.get(t['ticker'], t['ticker'])}: {t['stueck']} Stk. zu {eur(t['kurs'])} "
+    zeilen = [f"• {config.WATCHLIST.get(t['ticker'], t['ticker'])}: {stk(t['stueck'])} Stk. zu {eur(t['kurs'])} "
               f"({eur(t['gewinn'], vorzeichen=True)})" for t in verkaeufe]
     ergebnis = depotwert - config.STARTKAPITAL
     senden(f"✅ Alles verkauft ({eur(summe, vorzeichen=True)})",
