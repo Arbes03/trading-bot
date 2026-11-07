@@ -676,7 +676,7 @@ function zeichneChart(id) {
   const breite = el.clientWidth, hoehe = 260;
   const direkt = serien.length > 1 && breite > 520;
   const r = { l: 60, r: direkt ? 104 : 14, o: 10, u: 26 };
-  const innenB = breite - r.l - r.r, innenH = hoehe - r.o - r.u;
+  const innenB = Math.max(60, breite - r.l - r.r), innenH = hoehe - r.o - r.u; // nie negativ, auch bei sehr schmalem Fenster
 
   const alle = serien.flatMap((s) => s.werte).concat(referenz ?? []);
   let min = Math.min(...alle), max = Math.max(...alle);
