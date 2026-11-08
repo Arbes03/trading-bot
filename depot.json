@@ -8,5 +8,9 @@
     "anzahl": 0
   },
   "pausiert": null,
-  "verkauf_angefordert": null
+  "verkauf_angefordert": null,
+  "vergleich_start": {
+    "kurs": 127.31500244140625,
+    "zeit": "2026-11-08 14:03"
+  }
 }
