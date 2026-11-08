@@ -22,6 +22,7 @@ class Depot:
         self.kaeufe_heute = {"tag": "", "anzahl": 0}
         self.pausiert: dict | None = None  # Notbremse/Wunsch: {"seit": ..., "grund": ..., "art": ...}
         self.verkauf_angefordert: str | None = None  # "alles verkaufen" gewünscht, wird bei offener Börse ausgeführt
+        self.vergleich_start: dict | None = None  # Kurs des Vergleichs-ETF beim Start ("einfach halten")
         if datei and os.path.exists(datei):
             with open(datei, encoding="utf-8") as f:
                 daten = json.load(f)
@@ -32,6 +33,7 @@ class Depot:
             self.kaeufe_heute = daten.get("kaeufe_heute", self.kaeufe_heute)
             self.pausiert = daten.get("pausiert")
             self.verkauf_angefordert = daten.get("verkauf_angefordert")
+            self.vergleich_start = daten.get("vergleich_start")
 
     def darf_kaufen(self, ticker: str, zeit: datetime, motor) -> bool:
         """Bremsen des Motors: Sperre nach Verkauf und Höchstzahl Käufe pro Tag."""
@@ -43,6 +45,15 @@ class Depot:
             if zeit - datetime.fromisoformat(verkauft) < timedelta(hours=motor.sperre_stunden):
                 return False
         return True
+
+    def vergleichswert(self, kurse: dict[str, float], zeit) -> float | None:
+        """Was wäre das Startkapital wert, wenn man es am Start einfach in den Vergleichs-ETF gesteckt hätte?"""
+        kurs = kurse.get(config.VERGLEICH_ETF)
+        if not kurs:
+            return None
+        if not self.vergleich_start:
+            self.vergleich_start = {"kurs": kurs, "zeit": str(zeit)[:16]}
+        return (config.STARTKAPITAL - config.GEBUEHR_PRO_ORDER) * kurs / self.vergleich_start["kurs"]
 
     def gesamtwert(self, kurse: dict[str, float]) -> float:
         """Alles zusammen: Handelsgeld, Aktien und gesicherte Gewinne."""
@@ -116,6 +127,7 @@ class Depot:
         self.kaeufe_heute = {"tag": "", "anzahl": 0}
         self.pausiert = None
         self.verkauf_angefordert = None
+        self.vergleich_start = None
         for datei in (self.trades_datei, config.VERLAUF_DATEI):
             if datei and os.path.exists(datei):
                 os.remove(datei)
@@ -127,7 +139,8 @@ class Depot:
         with open(self.datei, "w", encoding="utf-8") as f:
             json.dump({"bargeld": self.bargeld, "gewinnkonto": self.gewinnkonto, "positionen": self.positionen,
                        "letzte_verkaeufe": self.letzte_verkaeufe, "kaeufe_heute": self.kaeufe_heute,
-                       "pausiert": self.pausiert, "verkauf_angefordert": self.verkauf_angefordert},
+                       "pausiert": self.pausiert, "verkauf_angefordert": self.verkauf_angefordert,
+                       "vergleich_start": self.vergleich_start},
                       f, indent=2, ensure_ascii=False)
 
     def _protokollieren(self, zeit, art, ticker, stueck, kurs, grund, gewinn):
@@ -150,13 +163,19 @@ class Depot:
                 writer.writerow(eintrag)
 
 
-def verlauf_eintragen(datei: str, zeit, wert: float):
-    """Merkt sich den Depotwert für die Verlaufskurve."""
+def verlauf_eintragen(datei: str, zeit, wert: float, halten: float | None = None):
+    """Merkt sich den Depotwert (und den Vergleichswert "ETF halten") für die Verlaufskurve."""
+    if os.path.exists(datei):
+        with open(datei, encoding="utf-8") as f:
+            inhalt = f.read().splitlines()
+        if inhalt and "halten" not in inhalt[0]:  # ältere Datei ohne Vergleichsspalte erweitern
+            with open(datei, "w", newline="", encoding="utf-8") as f:
+                f.write("zeit;wert;halten\n" + "".join(f"{z};\n" for z in inhalt[1:]))
     neu = not os.path.exists(datei)
     with open(datei, "a", newline="", encoding="utf-8") as f:
         if neu:
-            f.write("zeit;wert\n")
-        f.write(f"{str(zeit)[:19]};{wert:.2f}\n")
+            f.write("zeit;wert;halten\n")
+        f.write(f"{str(zeit)[:19]};{wert:.2f};{'' if halten is None else f'{halten:.2f}'}\n")
 
 
 def trades_lesen(datei: str) -> list[dict]:
@@ -170,5 +189,6 @@ def verlauf_lesen(datei: str) -> list[dict]:
     if not os.path.exists(datei):
         return []
     with open(datei, encoding="utf-8") as f:
-        return [{"zeit": z["zeit"], "wert": float(z["wert"])}
+        return [{"zeit": z["zeit"], "wert": float(z["wert"]),
+                 "halten": float(z["halten"]) if z.get("halten") else None}
                 for z in csv.DictReader(f, delimiter=";")]

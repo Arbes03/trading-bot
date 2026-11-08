@@ -401,7 +401,12 @@
       <div class="cockpit-links">
         <div class="karte">
           <div class="karten-kopf"><h2>Depotwert-Verlauf</h2><p class="hinweis">Gestrichelt: Startkapital</p></div>
+          <div class="legende" id="verlauf-legende" hidden>
+            <span><span class="muster" style="background:var(--series-1)"></span>Bot</span>
+            <span><span class="muster" style="background:var(--series-2)"></span><span id="verlauf-legende-etf">ETF einfach halten</span></span>
+          </div>
           <div class="chart" id="chart-verlauf"></div>
+          <p class="zusammenfassung" id="vergleich-text" style="margin:10px 0 0"></p>
         </div>
         <div class="karte">
           <div class="karten-kopf">
@@ -806,10 +811,24 @@ async function statusLaden() {
   $("k-trades").textContent = st.anzahl;
   $("k-trades-unter").textContent = st.anzahl ? `${st.gewinn_trades} mit Gewinn (${Math.round((st.gewinn_trades / st.anzahl) * 100)} %) · Gebühren ${eur.format(st.gebuehren)}` : "Noch keine";
 
+  // Vergleichslinie "ETF einfach halten" nur, wenn sie für alle Punkte vorliegt
+  const mitVergleich = s.verlauf.length >= 2 && s.verlauf.every((v) => v.halten != null);
+  $("verlauf-legende").hidden = !mitVergleich;
+  const vg = s.vergleich || {};
+  $("verlauf-legende-etf").textContent = `${vg.name || "ETF"} einfach halten`;
+  if (vg.wert != null) {
+    const bot = s.depotwert - s.startkapital, etf = vg.wert - s.startkapital, abstand = s.depotwert - vg.wert;
+    $("vergleich-text").innerHTML = `Bot ${tendenz(bot, vorzeichen(bot))} · ${esc(vg.name)} einfach halten ${tendenz(etf, vorzeichen(etf))} → ` +
+      (Math.abs(abstand) < 0.5 ? "gleichauf" : abstand > 0
+        ? `<strong>Bot liegt ${eur.format(abstand)} vorne</strong>` : `<strong>ETF liegt ${eur.format(-abstand)} vorne</strong>`);
+  } else {
+    $("vergleich-text").textContent = "";
+  }
   if (s.verlauf.length >= 2) {
     linienChart("chart-verlauf", {
       zeiten: s.verlauf.map((v) => v.zeit),
-      serien: [{ name: "Depotwert", kurz: "Depot", farbe: "--series-1", werte: s.verlauf.map((v) => v.wert) }],
+      serien: [{ name: "Bot", kurz: "Bot", farbe: "--series-1", werte: s.verlauf.map((v) => v.wert) }]
+        .concat(mitVergleich ? [{ name: `${vg.name || "ETF"} halten`, kurz: "ETF", farbe: "--series-2", werte: s.verlauf.map((v) => v.halten) }] : []),
       referenz: s.startkapital,
     });
   } else {

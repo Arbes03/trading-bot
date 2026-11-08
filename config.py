@@ -97,6 +97,10 @@ GRUPPE = {**{t: "Aktie" for t in DAX_AKTIEN}, **{t: "US-Aktie" for t in US_TECH}
           **{t: "Krypto" for t in KRYPTO}, **{t: "Rohstoff" for t in ROHSTOFFE}}
 
 
+# Vergleich "einfach halten": Was wäre das Startkapital wert, wenn man es am Start in diesen ETF gesteckt hätte?
+VERGLEICH_ETF = "EUNL.DE"  # iShares MSCI World
+
+
 def rund_um_die_uhr(ticker: str) -> bool:
     """Krypto wird immer gehandelt, alles andere nur zur Xetra-Zeit."""
     return GRUPPE.get(ticker) == "Krypto"

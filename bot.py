@@ -30,7 +30,7 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
     jetzt = datetime.now(ZONE)
     # Zur Xetra-Zeit alles, sonst nur Krypto. Gehaltene Werte immer laden, damit der Depotwert stimmt.
     handelbar = [t for t in config.WATCHLIST if boerse_offen(jetzt) or config.rund_um_die_uhr(t)]
-    laden = list(dict.fromkeys(handelbar + list(depot.positionen)))
+    laden = list(dict.fromkeys(handelbar + list(depot.positionen) + [config.VERGLEICH_ETF]))
     geladen, fehler = fuer_alle(lambda t: kurse_laden(t, motor.zeitraum_live, motor), laden)
     meldungen = [f"Fehler beim Laden von {t}: {f}" for t, f in fehler.items()]
     # Feiertag oder Datenproblem: keine aktuellen Kurse, also nicht handeln
@@ -58,11 +58,12 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
             if meldung:
                 meldungen.append(meldung)
 
+        halten = depot.vergleichswert(kurse, jetzt)  # legt beim ersten Mal den Startkurs fest
         depot.speichern()
         # Nur eintragen, wenn alle gehaltenen Werte einen Kurs haben. Sonst würde die Verlaufskurve
         # bei einem Yahoo-Ausfall falsche Zacken zeigen (Bewertung zum Kaufpreis).
         if all(t in geladen and geladen[t] for t in depot.positionen):
-            verlauf_eintragen(config.VERLAUF_DATEI, jetzt, depot.gesamtwert(kurse))
+            verlauf_eintragen(config.VERLAUF_DATEI, jetzt, depot.gesamtwert(kurse), halten)
     return kurse, meldungen, len(daten)
 
 

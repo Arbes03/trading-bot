@@ -284,6 +284,35 @@ def willkommen_melden(status: dict, wege: str) -> bool:
                   tags=["wave"])
 
 
+def wochenbericht_melden(status: dict, montag: str, etf_wochenstart: float | None):
+    """Zusammenfassung der Woche (ab Montag): Ergebnis, Trades, bester/schlechtester Verkauf, Gebühren, Vergleich."""
+    e = status["ergebnis"]
+    trades = [t for t in status["trades"] if t["zeit"][:10] >= montag]
+    kaeufe = sum(t["art"] == "KAUF" for t in trades)
+    verkaeufe = [v for v in status["verkaeufe"] if v["verkaufzeit"][:10] >= montag]
+    fest = sum(v["gewinn"] for v in verkaeufe)
+    zeilen = [
+        f"Ergebnis der Woche: {eur(e['woche'], vorzeichen=True)} ({e['woche_prozent'] * 100:+.2f} %)".replace(".", ","),
+        f"Depot jetzt: {eur(status['depotwert'])} ({eur(e['gesamt'], vorzeichen=True)} seit Start)",
+        f"Käufe: {kaeufe} · Verkäufe: {len(verkaeufe)} · Gebühren: {eur(len(trades) * config.GEBUEHR_PRO_ORDER)}",
+    ]
+    if verkaeufe:
+        bester = max(verkaeufe, key=lambda v: v["gewinn"])
+        schlechtester = min(verkaeufe, key=lambda v: v["gewinn"])
+        zeilen.append(f"Fest verdient/verloren: {eur(fest, vorzeichen=True)}")
+        zeilen.append(f"🏆 Bester Verkauf: {bester['name']} {eur(bester['gewinn'], vorzeichen=True)}")
+        if schlechtester is not bester:
+            zeilen.append(f"📉 Schlechtester: {schlechtester['name']} {eur(schlechtester['gewinn'], vorzeichen=True)}")
+    zeilen.append(f"🔒 Gesichert: {eur(status.get('gewinnkonto', 0))}")
+    vg = status.get("vergleich") or {}
+    if vg.get("wert") and etf_wochenstart:
+        etf = vg["wert"] - etf_wochenstart
+        zeilen.append(f"Zum Vergleich {vg['name']} einfach halten: {eur(etf, vorzeichen=True)} diese Woche")
+        zeilen.append("➡️ Bot war besser 👍" if e["woche"] > etf else "➡️ Einfach halten war besser")
+    lage = "im Plus" if e["woche"] > 0.005 else "im Minus" if e["woche"] < -0.005 else "ausgeglichen"
+    senden(f"🗓️ Wochenbericht: {lage} ({eur(e['woche'], vorzeichen=True)})", "\n".join(zeilen), tags=["calendar"])
+
+
 def tagesabschluss_melden(status: dict, datum: str):
     zeilen, lage = zusammenfassung(status, datum)
     senden(f"Tagesabschluss: {lage} ({eur(status['ergebnis']['gesamt'], vorzeichen=True)})", "\n".join(zeilen),

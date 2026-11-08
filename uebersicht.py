@@ -83,6 +83,10 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         "trades": list(reversed(trades[-100:])),
         "verkaeufe": verkaeufe_auswerten(trades),
         "tage": tagesergebnisse(verlauf, heute, depotwert),
+        "vergleich": {
+            "name": config.WATCHLIST.get(config.VERGLEICH_ETF, config.VERGLEICH_ETF),
+            "wert": next((v["halten"] for v in reversed(verlauf) if v.get("halten")), None),
+        },
         "statistik": {
             "anzahl": len(gewinne),
             "gewinn_trades": sum(g > 0 for g in gewinne),

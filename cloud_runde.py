@@ -8,11 +8,11 @@ und legt die Webseite samt Daten im Ordner public/ ab (wird von GitHub Pages ver
 import json
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import benachrichtigung
 import config
-from benachrichtigung import (eingerichtet, notbremse_melden, senden, stand_melden, tagesabschluss_melden,
+from benachrichtigung import (eingerichtet, notbremse_melden, senden, stand_melden, tagesabschluss_melden, wochenbericht_melden,
                               telegram_befehle_holen, telegram_einrichten, trade_melden, willkommen_melden,
                               wunsch_verkauf_melden)
 from bot import ZONE, boerse_offen, runde
@@ -131,6 +131,7 @@ def main():
     if config.NACHRICHT_TAGESABSCHLUSS:
         tagesabschluss_pruefen(jetzt, status, gemerkt)
     zwischenstand_pruefen(jetzt, status, gemerkt)
+    wochenbericht_pruefen(jetzt, status, gemerkt)
     # Zur Kontrolle (ohne Zugangsdaten): welche Wege eingerichtet sind, letzte Nachricht, letzter Fehler
     gemerkt["eingerichtet"] = wege or "keine"
     if benachrichtigung.letzte_nachricht:
@@ -203,6 +204,28 @@ def gemerktes_laden() -> dict:
         return {}
     with open(config.BENACHRICHTIGUNG_DATEI, encoding="utf-8") as f:
         return json.load(f)
+
+
+def wochenbericht_pruefen(jetzt: datetime, status: dict, gemerkt: dict):
+    """Einmal pro Woche: freitags nach Börsenschluss, sonst spätestens am Wochenende."""
+    if not eingerichtet():
+        return
+    if not (jetzt.weekday() == 4 and uhrzeit(jetzt) >= config.BOERSE_ZU) and jetzt.weekday() < 5:
+        return
+    jahr, woche, _ = jetzt.isocalendar()
+    kennung = f"{jahr}-KW{woche:02d}"
+    if gemerkt.get("wochenbericht") == kennung:
+        return
+    montag = f"{jetzt - timedelta(days=jetzt.weekday()):%Y-%m-%d}"
+    verlauf = verlauf_lesen(config.VERLAUF_DATEI)
+    if not any(v["zeit"][:10] >= montag for v in verlauf):
+        return  # diese Woche lief der Bot nicht
+    vorher = [v["halten"] for v in verlauf if v["zeit"][:10] < montag and v.get("halten")]
+    diese_woche = [v["halten"] for v in verlauf if v["zeit"][:10] >= montag and v.get("halten")]
+    etf_start = vorher[-1] if vorher else (diese_woche[0] if diese_woche else None)
+    wochenbericht_melden(status, montag, etf_start)
+    gemerkt["wochenbericht"] = kennung
+    print("Wochenbericht gesendet.")
 
 
 def zwischenstand_pruefen(jetzt: datetime, status: dict, gemerkt: dict):
