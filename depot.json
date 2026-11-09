@@ -1,11 +1,19 @@
 {
-  "bargeld": 500.0,
+  "bargeld": 399.00002266250357,
   "gewinnkonto": 0.0,
-  "positionen": {},
+  "positionen": {
+    "SXRT.DE": {
+      "stueck": 0.412353,
+      "einstandskurs": 242.51060944747925,
+      "hoechstkurs": 242.51060944747925,
+      "kaufzeit": "2026-11-09 10:36:48.774494+01:00",
+      "kosten": 100.99997733749642
+    }
+  },
   "letzte_verkaeufe": {},
   "kaeufe_heute": {
-    "tag": "",
-    "anzahl": 0
+    "tag": "2026-11-09",
+    "anzahl": 1
   },
   "pausiert": null,
   "verkauf_angefordert": null,
