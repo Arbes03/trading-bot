@@ -1,11 +1,11 @@
 {
-  "bargeld": 298.11029553171664,
+  "bargeld": 197.16766324893138,
   "gewinnkonto": 0.0,
   "positionen": {
     "SXRT.DE": {
       "stueck": 0.412353,
       "einstandskurs": 242.51060944747925,
-      "hoechstkurs": 247.8000030517578,
+      "hoechstkurs": 248.10000610351562,
       "kaufzeit": "2026-11-09 10:36:48.774494+01:00",
       "kosten": 100.99997733749642
     },
@@ -15,12 +15,19 @@
       "hoechstkurs": 150.1875313949585,
       "kaufzeit": "2026-11-09 12:34:23.553294+01:00",
       "kosten": 100.88972713078691
+    },
+    "SIE.DE": {
+      "stueck": 0.362941,
+      "einstandskurs": 275.368812789917,
+      "hoechstkurs": 275.368812789917,
+      "kaufzeit": "2026-11-10 10:34:13.597608+01:00",
+      "kosten": 100.94263228278527
     }
   },
   "letzte_verkaeufe": {},
   "kaeufe_heute": {
-    "tag": "2026-11-09",
-    "anzahl": 2
+    "tag": "2026-11-10",
+    "anzahl": 1
   },
   "pausiert": null,
   "verkauf_angefordert": null,
