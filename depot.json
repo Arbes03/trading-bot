@@ -1,5 +1,5 @@
 {
-  "bargeld": 96.36309920578007,
+  "bargeld": 3.6913679267058797e-05,
   "gewinnkonto": 0.0,
   "positionen": {
     "SXRT.DE": {
@@ -12,7 +12,7 @@
     "MRK.DE": {
       "stueck": 0.6651,
       "einstandskurs": 150.1875313949585,
-      "hoechstkurs": 150.5500030517578,
+      "hoechstkurs": 150.64999389648438,
       "kaufzeit": "2026-11-09 12:34:23.553294+01:00",
       "kosten": 100.88972713078691
     },
@@ -29,12 +29,19 @@
       "hoechstkurs": 297.6000061035156,
       "kaufzeit": "2026-11-10 13:34:42.324434+01:00",
       "kosten": 100.8045640431513
+    },
+    "DHL.DE": {
+      "stueck": 1.609916,
+      "einstandskurs": 59.234806221008306,
+      "hoechstkurs": 59.234806221008306,
+      "kaufzeit": "2026-11-11 13:24:17.586231+01:00",
+      "kosten": 96.3630622921008
     }
   },
   "letzte_verkaeufe": {},
   "kaeufe_heute": {
-    "tag": "2026-11-10",
-    "anzahl": 2
+    "tag": "2026-11-11",
+    "anzahl": 1
   },
   "pausiert": null,
   "verkauf_angefordert": null,
