@@ -107,7 +107,10 @@ Token vergessen? Bei @BotFather `/mybots` → deinen Bot → **API Token**.
 |---|---|
 | **Vorsichtig** (Standard) | Stundenkerzen, kauft nur in längeren Aufwärtstrends, darf über Nacht halten, höchstens 2 Käufe pro Tag, wenige Trades |
 | **Offensiv (Momentum)** | Stundenkerzen, kauft die stärksten Aufsteiger der letzten ca. 5 Tage, bis zu 33 % pro Aktie, höchstens 3 Positionen, Stop-Loss −3 % |
+| **Turbo (1 Rakete)** | Stundenkerzen, steckt ca. 95 % in den einen Wert, der in ca. 3 Tagen am stärksten gestiegen ist (mind. +5 %), Stop-Loss −5 %, Gewinnmitnahme +15 %. Sehr riskant |
 | **Schnell (Daytrading)** | 5-Minuten-Kerzen, reagiert auf jede kleine Bewegung, verkauft abends alles, sehr viele Trades |
+
+Nach einem Motorwechsel verkauft der Bot Positionen des alten Motors (zur Börsenzeit), sobald sie die Plätze des neuen Motors blockieren.
 
 Alle Zahlen stehen in `config.py`. Nach Änderungen immer zuerst einen Backtest machen (lokale Webseite → *Backtest*).
 

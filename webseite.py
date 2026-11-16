@@ -95,6 +95,7 @@ def status() -> dict:
         protokoll=list(reversed(protokoll)),
         bot_laeuft=bot.laeuft,
         letzte_runde=f"{bot.letzte_runde:%H:%M}" if bot.letzte_runde else None,
+        letzte_runde_iso=bot.letzte_runde.isoformat() if bot.letzte_runde else None,
         autostart=os.path.exists(AUTOSTART_VERKNUEPFUNG),
         backtest={k: _backtest[k] for k in ("laeuft", "motor", "fehler")},
         pausiert=depot.pausiert,

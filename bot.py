@@ -98,38 +98,40 @@ class Bot:
 
     def schleife(self):
         self.melden("Bot gestartet.")
-        tag, tagesstart, geschlossen_gemeldet = None, self.depot.bargeld, False
+        self._tag, self._tagesstart, self._geschlossen_gemeldet = None, self.depot.bargeld, False
         while not self._stop.is_set():
-            jetzt = datetime.now(ZONE)
-            krypto = any(config.rund_um_die_uhr(t) for t in config.WATCHLIST)
-            if not boerse_offen(jetzt) and not krypto:
-                if not geschlossen_gemeldet:
-                    self.melden(f"Börse geschlossen, warte auf Öffnung "
-                                f"(Mo-Fr {config.BOERSE_AUF}-{config.BOERSE_ZU}) ...")
-                    geschlossen_gemeldet = True
-                self._stop.wait(60)
-                continue
-
-            if geschlossen_gemeldet:
-                self.melden("Börse offen, Bot beobachtet die Kurse.")
-                geschlossen_gemeldet = False
-            if jetzt.date() != tag:
-                tag = jetzt.date()
-                tagesstart = self.depot.gesamtwert({})
-            motor = aktiver_motor()  # jede Runde neu, damit ein Wechsel auf der Webseite sofort greift
+            # Egal welcher Fehler: die Schleife darf nie sterben, sonst handelt der Bot unbemerkt nicht mehr
             try:
-                self.kurse, meldungen, anzahl = runde(self.depot, motor, tagesstart, self.sperre)
+                warten = self._durchlauf()
             except Exception as fehler:
-                self.melden(f"Fehler in der Prüfrunde: {fehler}")
-                self._stop.wait(60)
-                continue
-            self.letzte_runde = jetzt
-            for m in meldungen:
-                self.melden(m)
-            wert = self.depot.gesamtwert(self.kurse)
-            self.melden(f"Prüfrunde fertig ({motor.titel}): Depot {wert:,.2f} EUR, "
-                        f"Kurse für {anzahl}/{len(config.WATCHLIST)} Werte")
-            self._stop.wait(motor.pruef_abstand)
+                self.melden(f"Fehler in der Prüfrunde, neuer Versuch in 1 Minute: {fehler!r}")
+                warten = 60
+            self._stop.wait(warten)
+
+    def _durchlauf(self) -> int:
+        """Ein Durchlauf der Dauerschleife. Gibt zurück, wie viele Sekunden bis zum nächsten gewartet wird."""
+        jetzt = datetime.now(ZONE)
+        krypto = any(config.rund_um_die_uhr(t) for t in config.WATCHLIST)
+        if not boerse_offen(jetzt) and not krypto:
+            if not self._geschlossen_gemeldet:
+                self.melden(f"Börse geschlossen, warte auf Öffnung (Mo-Fr {config.BOERSE_AUF}-{config.BOERSE_ZU}) ...")
+                self._geschlossen_gemeldet = True
+            return 60
+        if self._geschlossen_gemeldet:
+            self.melden("Börse offen, Bot beobachtet die Kurse.")
+            self._geschlossen_gemeldet = False
+        if jetzt.date() != self._tag:
+            self._tag = jetzt.date()
+            self._tagesstart = self.depot.gesamtwert({})
+        motor = aktiver_motor()  # jede Runde neu, damit ein Wechsel auf der Webseite sofort greift
+        self.kurse, meldungen, anzahl = runde(self.depot, motor, self._tagesstart, self.sperre)
+        self.letzte_runde = jetzt
+        for m in meldungen:
+            self.melden(m)
+        wert = self.depot.gesamtwert(self.kurse)
+        self.melden(f"Prüfrunde fertig ({motor.titel}): Depot {wert:,.2f} EUR, "
+                    f"Kurse für {anzahl}/{len(config.WATCHLIST)} Werte")
+        return motor.pruef_abstand
 
 
 def main():

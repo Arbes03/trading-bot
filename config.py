@@ -74,6 +74,18 @@ US_TECH = {
     "ABEA.DE": "Alphabet (Google)",
     "FB2A.DE": "Meta (Facebook)",
     "AMD.DE": "AMD",
+    # Seit 15.11.2026 dabei: im 2-Wochen-Test mit Turbo 53 % statt 47 % der Fenster im Plus, im Schnitt +1,4 % statt +0,3 %.
+    # Vorsicht: Die Auswahl ist im Nachhinein getroffen (z. B. Palantir ist bekanntlich stark gestiegen), das schönt den Test.
+    "NFC.DE": "Netflix",
+    "1YD.DE": "Broadcom",
+    "PTX.DE": "Palantir",
+    "INL.DE": "Intel",
+    "ORC.DE": "Oracle",
+    "1QZ.DE": "Coinbase",
+    "FOO.DE": "Salesforce",
+    "UT8.DE": "Uber",
+    "QCI.DE": "Qualcomm",
+    "MTE.DE": "Micron",
 }
 
 # Kryptowährungen: werden rund um die Uhr gehandelt, auch nachts und am Wochenende. Sehr starke Schwankungen.
@@ -175,6 +187,39 @@ MOTOREN = {
         momentum_min=0.03,           # mindestens +3 % in diesen 5 Tagen
         max_anteil=0.33,             # bis zu 33 % des Depots pro Aktie
         max_positionen=3,
+    ),
+    "turbo": dict(
+        titel="Turbo (1 Rakete)",
+        beschreibung="Stundenkerzen, steckt fast alles in den einen Wert, der in den letzten ca. 3 Tagen "
+                     "am stärksten gestiegen ist. Sehr riskant: großer Gewinn oder großer Verlust.",
+        # 2-Wochen-Test (Nov. 2026, 500 EUR, 1 EUR Gebühr, 96 Fenster in 2 Jahren, ohne Notbremse):
+        # 60 % der Fenster im Plus, 27 % über +5 %, 6 % über +10 %, Mittel +0,9 %, bestes +16,6 %, schlechtestes -18,3 %.
+        # Mit Notbremse (-5 %) nur 49 % im Plus. Zum Vergleich "Vorsichtig": 15 % im Plus.
+        intervall="1h",
+        zeitraum_live="60d",
+        zeitraum_backtest="2y",
+        pruef_abstand=900,
+        ema_kurz=10,
+        ema_lang=30,
+        trend_ema=None,
+        rsi_min_kauf=0,
+        rsi_max_kauf=80,
+        stop_loss=0.05,
+        take_profit=0.15,
+        trailing_stop=0.06,
+        verkauf_bei_trendwende=False,
+        verkauf_unter_trend=False,
+        nichts_ueber_nacht=False,
+        sperre_stunden=24,
+        max_kaeufe_pro_tag=2,
+        einstieg="momentum",
+        momentum_kerzen=24,          # Anstieg der letzten 24 Stundenkerzen (ca. 3 Handelstage)
+        momentum_min=0.05,           # mindestens +5 %
+        max_anteil=0.95,             # fast alles in einen Wert
+        max_positionen=1,
+        # Gewinn-Prüfung vor dem Kauf (früheres Verhalten desselben Signals beim selben Wert) ist eingebaut, aber aus:
+        # Im 2-Wochen-Test (Nov. 2026) war sie in allen Varianten schlechter (z. B. 34-41 % der Fenster im Plus statt 47 %).
+        # pruefung_horizont=24,      # einschalten: nach ca. 3 Tagen nachschauen (Einstellungen siehe strategie.py)
     ),
     "schnell": dict(
         titel="Schnell (Daytrading)",

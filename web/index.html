@@ -780,6 +780,13 @@ async function statusLaden() {
   $("bot-text").textContent = s.cloud
     ? `Cloud-Bot · Stand ${s.letzte_runde}`
     : s.bot_laeuft ? (s.letzte_runde ? `Bot läuft · letzte Prüfung ${s.letzte_runde}` : "Bot läuft") : "Bot gestoppt";
+  // Warnung, wenn der Bot lange nicht geprüft hat (GitHub startet Läufe oft verspätet, daher dort mehr Spielraum)
+  const alterMin = s.letzte_runde_iso ? (Date.now() - Date.parse(s.letzte_runde_iso)) / 60000 : 0;
+  if ((s.cloud || s.bot_laeuft) && alterMin > (s.cloud ? 120 : 45)) {
+    $("bot-punkt").className = "punkt warn";
+    const dauer = alterMin >= 90 ? `${Math.round(alterMin / 60)} Std.` : `${Math.round(alterMin)} Min.`;
+    $("bot-text").textContent += ` · ⚠️ seit ${dauer} keine Prüfung`;
+  }
   $("boerse-punkt").className = "punkt " + (s.boerse_offen ? "gut" : "");
   $("boerse-text").textContent = s.boerse_offen ? "Börse offen" : `Börse geschlossen (${s.einstellungen.boerse})`;
   const knopf = $("bot-knopf");
@@ -865,9 +872,10 @@ async function statusLaden() {
   $("regeln-titel").textContent = `So handelt der Bot (Motor: ${m.titel})`;
   $("regeln").innerHTML = [
     m.einstieg === "momentum"
-      ? `<strong>Kaufen</strong>, wenn eine Aktie in den letzten ca. 5 Handelstagen um mindestens <strong>${pz(m.momentum_min)}</strong> gestiegen ist und ihr Trend intakt ist (berechnet auf ${kerze}). Die <strong>stärksten Aufsteiger zuerst</strong>.`
+      ? `<strong>Kaufen</strong>, wenn eine Aktie in den letzten ca. ${Math.max(1, Math.round(m.momentum_kerzen / 9))} Handelstagen um mindestens <strong>${pz(m.momentum_min)}</strong> gestiegen ist und ihr Trend intakt ist (berechnet auf ${kerze}). Die <strong>stärksten Aufsteiger zuerst</strong>.`
       : `<strong>Kaufen</strong>, wenn ein Aufwärtstrend beginnt (schneller Durchschnitt kreuzt den langsamen nach oben, berechnet auf ${kerze})` +
         (m.rsi_min_kauf > 0 ? `, genug Schwung da ist` : "") + ` und die Aktie nicht schon „überkauft“ ist`,
+    ...(m.einstieg === "momentum" && m.pruefung_horizont ? [`🧠 <strong>Gewinn-Prüfung:</strong> Vor jedem Kauf schaut der Bot nach, wie es bei genau diesem Wert <strong>früher</strong> nach demselben Signal weiterging (ca. ${Math.max(1, Math.round(m.pruefung_horizont / 9))} Tage danach). Gekauft wird nur, wenn das Signal mindestens ${m.pruefung_min_signale}-mal kam, danach im Schnitt mindestens <strong>+${pz(m.pruefung_min_erwartung)}</strong> brachte und in mindestens ${pz(m.pruefung_min_quote)} der Fälle im Plus lag. Der Wert mit der besten Erfahrung kommt zuerst`] : []),
     ...(m.trend_ema ? [`Nur kaufen, wenn die Aktie auch <strong>langfristig im Aufwärtstrend</strong> ist (über ihrem Durchschnitt der letzten ${m.trend_ema} Kerzen, ca. 1 Monat)`] : []),
     `<strong>Verkaufen</strong> bei −${pz(m.stop_loss)} (Stop-Loss), bei +${pz(m.take_profit)} (Gewinnmitnahme) oder wenn der Kurs ${pz(m.trailing_stop)} unter sein Hoch seit dem Kauf fällt` +
       (m.verkauf_bei_trendwende ? ", oder wenn der kurze Trend nach unten dreht" : "") +
@@ -1299,7 +1307,7 @@ let backtestTimer = null;
 let btMotor = "vorsichtig";
 let btErgebnisse = {};
 function btMotorenZeigen(motoren) {
-  const zeitraum = { vorsichtig: "2 Jahre", offensiv: "2 Jahre", schnell: "60 Tage" };
+  const zeitraum = { vorsichtig: "2 Jahre", offensiv: "2 Jahre", turbo: "2 Jahre", schnell: "60 Tage" };
   $("bt-motoren").innerHTML = motoren.map((mo) =>
     `<button class="chip" data-bt-motor="${esc(mo.name)}" aria-pressed="${mo.name === btMotor}">${esc(mo.titel)}${zeitraum[mo.name] ? `<span class="anzahl">${zeitraum[mo.name]}</span>` : ""}</button>`).join("");
 }

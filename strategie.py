@@ -38,6 +38,13 @@ class Motor:
     max_positionen: int | None = None  # None = Wert aus config.MAX_POSITIONEN
     gewinnschutz_ab: float | None = None  # liegt eine Aktie so weit im Plus, wird der Stop auf den Kaufpreis gezogen
     tauschen: bool = False             # Plätze voll + starker Kandidat: schwächste Position (nur im Plus) tauschen
+    # Gewinn-Prüfung vor dem Kauf: Wie ist es bei genau diesem Wert früher weitergegangen, wenn dasselbe
+    # Kaufsignal kam? Gekauft wird nur, wenn das im Schnitt deutlich Gewinn gebracht hat.
+    pruefung_horizont: int = 0         # nach so vielen Kerzen wird nachgeschaut (0 = Prüfung aus)
+    pruefung_fenster: int = 400        # so viele Kerzen Vergangenheit zählen (ca. 60 Tage bei Aktien)
+    pruefung_min_signale: int = 10     # so oft muss das Signal früher schon gekommen sein
+    pruefung_min_erwartung: float = 0.02  # durchschnittlicher Anstieg danach mindestens (+2 %)
+    pruefung_min_quote: float = 0.55   # Anteil der Fälle, in denen es danach höher stand
 
     @property
     def anteil_pro_position(self) -> float:
@@ -105,7 +112,46 @@ def indikatoren_berechnen(kerzen: list[dict], motor: Motor) -> list[dict]:
         k["ema_trend"] = ema_trend
         k["rsi"] = 100.0 if avg_verlust == 0 else 100 - 100 / (1 + avg_gewinn / avg_verlust)
         vorher = c
+    if motor.pruefung_horizont:
+        erfahrung_berechnen(kerzen, motor)
     return kerzen
+
+
+def momentum_bedingung(k: dict, motor: Motor) -> bool:
+    """Die Kaufbedingung des Momentum-Einstiegs (ohne Gewinn-Prüfung)."""
+    if k["momentum"] is None or k["momentum"] < motor.momentum_min:
+        return False
+    if k["ema_kurz"] <= k["ema_lang"] or k["rsi"] >= motor.rsi_max_kauf:
+        return False
+    return not (motor.trend_ema and k["close"] <= k["ema_trend"])
+
+
+def erfahrung_berechnen(kerzen: list[dict], motor: Motor):
+    """Schreibt an jede Kerze, wie es FRÜHER nach demselben Kaufsignal weiterging.
+
+    Es zählen nur Fälle, deren Ausgang zu diesem Zeitpunkt schon feststand (kein Blick in die Zukunft).
+    Ergebnis: erfahrung_anzahl, erfahrung_schnitt (mittlerer Anstieg danach), erfahrung_quote (Anteil im Plus).
+    """
+    h, fenster = motor.pruefung_horizont, motor.pruefung_fenster
+    faelle: list[tuple[int, float]] = []  # (Kerze des Signals, Anstieg danach)
+    signal = [False] * len(kerzen)
+    summe, treffer, erster = 0.0, 0, 0
+    for i, k in enumerate(kerzen):
+        signal[i] = momentum_bedingung(k, motor)
+        j = i - h
+        if j >= 0 and signal[j]:  # Ausgang des Signals von vor h Kerzen steht jetzt fest
+            ergebnis = k["close"] / kerzen[j]["close"] - 1
+            faelle.append((j, ergebnis))
+            summe += ergebnis
+            treffer += ergebnis > 0
+        while erster < len(faelle) and faelle[erster][0] < i - fenster:  # zu alte Fälle vergessen
+            summe -= faelle[erster][1]
+            treffer -= faelle[erster][1] > 0
+            erster += 1
+        anzahl = len(faelle) - erster
+        k["erfahrung_anzahl"] = anzahl
+        k["erfahrung_schnitt"] = summe / anzahl if anzahl else None
+        k["erfahrung_quote"] = treffer / anzahl if anzahl else None
 
 
 def kauf_signal(letzte: dict, vorletzte: dict, motor: Motor) -> str | None:
@@ -126,21 +172,29 @@ def kauf_signal(letzte: dict, vorletzte: dict, motor: Motor) -> str | None:
 
 def momentum_signal(letzte: dict, motor: Motor) -> str | None:
     """Kaufen, wenn die Aktie in den letzten Tagen stark gestiegen ist und der Trend intakt ist."""
+    if not momentum_bedingung(letzte, motor):
+        return None
     momentum = letzte["momentum"]
-    if momentum is None or momentum < motor.momentum_min:
+    tage = max(1, round(motor.momentum_kerzen / 9))
+    if not motor.pruefung_horizont:
+        return f"Starker Anstieg ({momentum:+.1%} in ca. {tage} Tagen, RSI {letzte['rsi']:.0f})"
+    anzahl, schnitt, quote = (letzte.get("erfahrung_anzahl", 0), letzte.get("erfahrung_schnitt"),
+                              letzte.get("erfahrung_quote"))
+    if anzahl < motor.pruefung_min_signale or schnitt is None \
+            or schnitt < motor.pruefung_min_erwartung or quote < motor.pruefung_min_quote:
         return None
-    if letzte["ema_kurz"] <= letzte["ema_lang"] or letzte["rsi"] >= motor.rsi_max_kauf:
-        return None
-    if motor.trend_ema and letzte["close"] <= letzte["ema_trend"]:
-        return None
-    return f"Starker Anstieg ({momentum:+.1%} in ca. 5 Tagen, RSI {letzte['rsi']:.0f})"
+    return (f"Starker Anstieg ({momentum:+.1%} in ca. {tage} Tagen). Gewinn-Prüfung: früher {anzahl}x "
+            f"dasselbe Signal, danach im Schnitt {schnitt:+.1%}, {quote:.0%} im Plus")
 
 
 def reihenfolge(kandidaten: dict[str, dict], positionen: dict, motor: Motor) -> list[str]:
     """Erst gehaltene Werte (Verkäufe zuerst), dann beim Momentum-Motor die stärksten Werte zuerst."""
     gehalten = [t for t in kandidaten if t in positionen]
     rest = [t for t in kandidaten if t not in positionen]
-    if motor.einstieg == "momentum":
+    if motor.einstieg == "momentum" and motor.pruefung_horizont:
+        # Mit Gewinn-Prüfung: der Wert mit der besten Erfahrung zuerst
+        rest.sort(key=lambda t: kandidaten[t].get("erfahrung_schnitt") or -1, reverse=True)
+    elif motor.einstieg == "momentum":
         rest.sort(key=lambda t: kandidaten[t]["momentum"] if kandidaten[t]["momentum"] is not None else -1,
                   reverse=True)
     return gehalten + rest

@@ -90,6 +90,7 @@ class Depot:
             "hoechstkurs": kaufkurs,
             "kaufzeit": str(zeit),
             "kosten": kosten,
+            "motor": motor.name if motor else None,  # welcher Motor gekauft hat (wichtig nach einem Motorwechsel)
         }
         tag = str(zeit)[:10]
         if self.kaeufe_heute["tag"] != tag:

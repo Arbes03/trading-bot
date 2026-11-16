@@ -80,6 +80,13 @@ def main():
             melden(m)
         melden(f"Prüfrunde fertig ({motor.titel}): Depot {depot.gesamtwert(kurse):,.2f} EUR, "
                f"Kurse für {anzahl}/{len(config.WATCHLIST)} Werte")
+        # Warnung aufs Handy, wenn zur Börsenzeit die meisten Kurse fehlen (höchstens einmal pro Tag)
+        if boerse_offen(jetzt) and uhrzeit(jetzt) >= "09:30" and anzahl < len(config.WATCHLIST) / 2 \
+                and gemerkt.get("kurswarnung") != f"{jetzt:%Y-%m-%d}":
+            senden("⚠️ Kursdaten fehlen", f"Ich habe gerade nur für {anzahl} von {len(config.WATCHLIST)} Werten "
+                   "aktuelle Kurse bekommen (Yahoo antwortet schlecht). Ohne Kurse handle ich diese Werte nicht. "
+                   "Ich versuche es in der nächsten Runde wieder.")
+            gemerkt["kurswarnung"] = f"{jetzt:%Y-%m-%d}"
         # Bei einem Komplett-Verkauf eine Sammelmeldung statt vieler einzelner
         if any(m.startswith("VERKAUF AUF WUNSCH") for m in meldungen):
             wunsch_verkauf_melden(depot.trades, depot.gesamtwert(kurse))
@@ -107,6 +114,7 @@ def main():
         protokoll=protokoll[:PROTOKOLL_MAX],
         bot_laeuft=True,
         letzte_runde=f"{jetzt:%d.%m. %H:%M}",
+        letzte_runde_iso=jetzt.isoformat(),
         autostart=False,
         backtest={"laeuft": False, "motor": None, "fehler": None},
         cloud=True,

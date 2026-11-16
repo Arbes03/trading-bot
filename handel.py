@@ -72,6 +72,10 @@ def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorlet
     if ticker in depot.positionen:
         if motor.nichts_ueber_nacht and uhrzeit(zeit) >= config.ALLES_VERKAUFEN_AB:
             grund = "Börsenschluss naht"
+        elif depot.positionen[ticker].get("motor") != motor.name \
+                and len(depot.positionen) >= motor.positionen_hoechstens:
+            # Nach einem Motorwechsel: Positionen des alten Motors blockieren die Plätze des neuen
+            grund = f"Platz frei für Motor {motor.titel}"
         else:
             grund = verkauf_grund(kurs, letzte, vorletzte, depot.positionen[ticker], motor)
         if grund:

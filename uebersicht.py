@@ -14,7 +14,8 @@ VERLAUF_PUNKTE = 600
 def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list, protokoll: list, *,
                  bot_laeuft: bool, letzte_runde: str | None, autostart: bool, backtest: dict,
                  cloud: bool = False, pausiert: dict | None = None,
-                 verkauf_angefordert: str | None = None, gewinnkonto: float = 0.0) -> dict:
+                 verkauf_angefordert: str | None = None, gewinnkonto: float = 0.0,
+                 letzte_runde_iso: str | None = None) -> dict:
     positionen = []
     for ticker, pos in positionen_roh.items():
         kurs = kurse.get(ticker) or pos["einstandskurs"]
@@ -62,6 +63,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         },
         "boerse_offen": boerse_offen(jetzt),
         "letzte_runde": letzte_runde,
+        "letzte_runde_iso": letzte_runde_iso,  # für die Warnung "Bot hat lange nicht geprüft"
         "startkapital": config.STARTKAPITAL,
         "depotwert": depotwert,
         "bargeld": bargeld,           # Handelsgeld (damit kauft der Bot)

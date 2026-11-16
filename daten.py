@@ -3,7 +3,11 @@
 Jede Kerze ist ein dict: {"zeit": datetime, "close": float, ...Indikatoren}.
 """
 
+import http.client
 import json
+import random
+import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -16,11 +20,27 @@ URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range={zeitrau
 ZONE = ZoneInfo(config.ZEITZONE)
 
 
+VERSUCHE = 3             # so oft wird ein Kurs neu angefragt, wenn Yahoo nicht antwortet
+GLEICHZEITIG = 4         # so viele Anfragen gleichzeitig (mehr blockt Yahoo öfter ab)
+
+
 def kurse_laden(ticker: str, zeitraum: str, motor: Motor) -> list[dict]:
-    url = URL.format(ticker=ticker, zeitraum=zeitraum, intervall=motor.intervall)
-    anfrage = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(anfrage, timeout=30) as antwort:
-        ergebnis = json.load(antwort)["chart"]["result"]
+    """Lädt die Kerzen eines Werts. Bei Netzwerkfehlern wird es bis zu VERSUCHE-mal versucht,
+    abwechselnd über zwei Yahoo-Server und mit wachsender Pause."""
+    for versuch in range(VERSUCHE):
+        url = URL.format(ticker=ticker, zeitraum=zeitraum, intervall=motor.intervall)
+        if versuch % 2:
+            url = url.replace("query1.", "query2.")
+        anfrage = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        try:
+            with urllib.request.urlopen(anfrage, timeout=20) as antwort:
+                ergebnis = json.load(antwort)["chart"]["result"]
+            break
+        except (OSError, ValueError, http.client.HTTPException) as fehler:
+            # 404 = Kürzel gibt es nicht: neu versuchen bringt nichts
+            if isinstance(fehler, urllib.error.HTTPError) and fehler.code == 404 or versuch == VERSUCHE - 1:
+                raise
+            time.sleep(2 * (versuch + 1) + random.random())
     if not ergebnis or "timestamp" not in ergebnis[0]:
         return []
 
@@ -43,7 +63,7 @@ def fuer_alle(funktion, ticker_liste) -> tuple[dict, dict]:
             return ticker, None, fehler
 
     ergebnisse, fehler = {}, {}
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=GLEICHZEITIG) as pool:
         for ticker, wert, f in pool.map(sicher, ticker_liste):
             if f is not None:
                 fehler[ticker] = f
