@@ -11,6 +11,7 @@ import shutil
 from datetime import datetime, timedelta
 
 import benachrichtigung
+import lagebericht
 import config
 from benachrichtigung import (eingerichtet, notbremse_melden, senden, stand_melden, tagesabschluss_melden, wochenbericht_melden,
                               telegram_befehle_holen, telegram_einrichten, trade_melden, willkommen_melden,
@@ -128,6 +129,12 @@ def main():
         kandidaten=gemerkt.get("kandidaten"),
     )
     os.makedirs(AUSGABE_ORDNER, exist_ok=True)
+    # „Wie läuft's?“ mit echter Stimme. Klappt das nicht, liest die Webseite mit der Gerätestimme vor.
+    anfaenge = lagebericht.sprachdatei_erzeugen(status["lagebericht"]["saetze"],
+                                                os.path.join(AUSGABE_ORDNER, "lage.mp3"))
+    if anfaenge is not None:
+        status["lagebericht"].update(audio=f"lage.mp3?v={int(jetzt.timestamp())}", anfaenge=anfaenge)
+        print("Sprachdatei für „Wie läuft's?“ erzeugt.")
     with open(os.path.join(AUSGABE_ORDNER, "status.json"), "w", encoding="utf-8") as f:
         json.dump(status, f, ensure_ascii=False, default=str)
     shutil.copy(os.path.join("web", "index.html"), os.path.join(AUSGABE_ORDNER, "index.html"))

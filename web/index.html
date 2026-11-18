@@ -335,22 +335,31 @@
   @keyframes dreh { to { transform: rotate(360deg); } }
   details summary { cursor: pointer; font-size: 13px; color: var(--text-secondary); margin-top: 10px; }
   footer { font-size: 12px; color: var(--text-muted); margin-top: 28px; text-align: center; }
-  /* Lage-Erklärung zum Anhören */
+  /* „Wie läuft's?“: Lagebericht mit Stimme */
   header h1 { cursor: pointer; }
-  button.sprech { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 999px; font-size: 13px; }
-  button.sprech[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
-  .welle { display: inline-flex; gap: 2px; align-items: center; height: 14px; }
-  .welle i { width: 3px; height: 5px; background: currentColor; border-radius: 2px; }
-  button.sprech[aria-pressed="true"] .welle i { animation: welle 0.9s ease-in-out infinite; }
-  .welle i:nth-child(2) { animation-delay: 0.15s; } .welle i:nth-child(3) { animation-delay: 0.3s; }
-  @keyframes welle { 50% { height: 14px; } }
-  .erklaerung { padding: 16px 18px; margin-bottom: 16px; border-left: 4px solid var(--accent); }
-  .erklaerung-kopf { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .erklaerung-kopf strong { font-size: 16px; }
-  .erklaerung-kopf button { margin-left: auto; padding: 4px 10px; font-size: 13px; }
-  .erklaerung p { margin: 0 0 6px; color: var(--text-secondary); transition: color 0.2s; }
-  .erklaerung p.jetzt { color: var(--text-primary); }
-  .erklaerung .klein { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+  .lage { padding: 22px; }
+  .lage-kopf { display: flex; align-items: center; gap: 16px; }
+  .lage-kopf h2 { margin: 0; font-size: 20px; }
+  .lage-unter { font-size: 13px; color: var(--text-muted); }
+  .lage-play {
+    width: 60px; height: 60px; border-radius: 50%; padding: 0; flex: none;
+    display: grid; place-items: center; box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .lage-play svg { width: 26px; height: 26px; }
+  .lage-play .stopp, .spricht .lage-play .play { display: none; }
+  .spricht .lage-play .stopp { display: block; }
+  .spricht .lage-play { animation: puls 1.6s ease-in-out infinite; }
+  @keyframes puls { 50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 8%, transparent); } }
+  .lage-fortschritt { height: 4px; border-radius: 2px; background: var(--surface-3); margin: 18px 0 14px; overflow: hidden; }
+  #lage-balken { height: 100%; width: 0; background: var(--accent); transition: width 0.25s linear; }
+  .lage-text p {
+    margin: 0 0 4px; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    color: var(--text-secondary); font-size: 16px; transition: background 0.2s, color 0.2s;
+  }
+  .lage-text p:hover { background: var(--surface-2); }
+  .lage-text p.jetzt { color: var(--text-primary); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .lage .klein { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+  .lage .warnbox { margin: 14px 0 0; }
 </style>
 </head>
 <body>
@@ -358,8 +367,6 @@
   <header>
     <h1 id="titel" title="Antippen: der Bot erzählt dir, wie es gerade läuft">Demo-Trading-Bot</h1>
     <span class="badge">Nur Spielgeld</span>
-    <button id="sprech-knopf" class="sprech" aria-pressed="false" title="Der Bot erzählt dir, wie es gerade läuft">
-      <span class="welle" aria-hidden="true"><i></i><i></i><i></i></span><span id="sprech-text">Wie läuft's?</span></button>
     <div class="pills">
       <span class="pill"><span class="punkt" id="bot-punkt"></span><span id="bot-text">Bot …</span></span>
       <span class="pill"><span class="punkt" id="boerse-punkt"></span><span id="boerse-text">Börse …</span></span>
@@ -367,18 +374,15 @@
     </div>
   </header>
 
-  <div id="erklaerung" class="karte erklaerung" hidden aria-live="polite">
-    <div class="erklaerung-kopf"><strong>🤖 So läuft es gerade</strong>
-      <button id="erklaerung-zu" aria-label="Erklärung schließen">Schließen</button></div>
-    <div id="erklaerung-text"></div>
-    <div class="klein" id="erklaerung-hinweis"></div>
-  </div>
 
   <div class="layout">
   <nav role="tablist" aria-orientation="vertical" aria-label="Bereiche">
     <button role="tab" data-ansicht="uebersicht" aria-selected="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
       Übersicht</button>
+    <button role="tab" data-ansicht="lage" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+      Wie läuft's?</button>
     <button role="tab" data-ansicht="depot" aria-selected="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 7v11a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-3"/><path d="M21 9h-5a2 2 0 0 0 0 4h5z"/></svg>
       Mein Depot</button>
@@ -498,6 +502,24 @@
   </section>
 
   <!-- MEIN DEPOT -->
+  <!-- WIE LÄUFT'S? -->
+  <section class="ansicht" id="lage" hidden>
+    <div class="karte lage">
+      <div class="lage-kopf">
+        <button id="lage-knopf" class="haupt lage-play" aria-pressed="false" aria-label="Anhören">
+          <svg class="play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+          <svg class="stopp" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
+        <div><h2>🤖 So läuft es gerade</h2><div class="lage-unter" id="lage-unter">Antippen zum Anhören</div></div>
+      </div>
+      <div class="warnbox" id="lage-warnung" hidden></div>
+      <div class="lage-fortschritt"><div id="lage-balken"></div></div>
+      <div class="lage-text" id="lage-text"><p>Lade …</p></div>
+      <div class="klein" id="lage-hinweis"></div>
+    </div>
+    <audio id="lage-audio" preload="auto"></audio>
+  </section>
+
   <section class="ansicht" id="depot" hidden>
     <div class="kacheln" id="d-kacheln"></div>
     <div class="karte">
@@ -671,6 +693,7 @@ document.querySelectorAll("nav button").forEach((knopf) => {
 function zeigeAnsicht(name) {
   document.querySelectorAll("nav button").forEach((k) => k.setAttribute("aria-selected", k.dataset.ansicht === name));
   document.querySelectorAll(".ansicht").forEach((s) => (s.hidden = s.id !== name));
+  if (name !== "lage" && typeof lageStoppen === "function" && lageQuelle) lageStoppen();
   try { localStorage.setItem("ansicht", name); } catch (e) {}
   neuZeichnen();
 }
@@ -820,6 +843,7 @@ async function statusLaden() {
   knopf.classList.toggle("haupt", !s.bot_laeuft);
 
   ergebnisZeigen(s);
+  lageZeigen(s);
   const nb = s.notbremse || {};
   $("notbremse").hidden = !nb.aktiv && !nb.verkauf_angefordert;
   $("notbremse-titel").textContent = nb.verkauf_angefordert
@@ -1425,143 +1449,104 @@ if (telegramApp && telegramApp.initData) {
 }
 try { const a = localStorage.getItem("ansicht"); if (a && $(a)) zeigeAnsicht(a); } catch (e) {}
 
-// ---------- Lage erklären und vorlesen ----------
-// Der Text entsteht aus den aktuellen Daten des Bots, vorgelesen mit der Stimme deines Geräts.
-const ganz = (x) => Math.round(x).toLocaleString("de-DE");
-function euroSprache(x) { // gut vorlesbar: "11 Euro 61" statt "11,61 €"
-  const cent = Math.round(Math.abs(x) * 100), euro = Math.floor(cent / 100), rest = cent % 100;
-  if (euro >= 100) return `rund ${ganz(Math.abs(x))} Euro`;
-  if (euro === 0) return `${rest} Cent`;
-  return rest ? `${euro} Euro ${rest}` : `${euro} Euro`;
-}
-const prozentSprache = (x) => `${Math.abs(x * 100).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Prozent`;
-const plusMinus = (x) => (x >= 0 ? "plus " : "minus ") + prozentSprache(x);
-const kursSprache = (x) => `${x.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Euro`;
-
-function lageSaetze(s) {
-  const m = s.einstellungen.motor, e = s.ergebnis, nb = s.notbremse || {};
-  const saetze = [];
-  const stunde = new Date().getHours();
-  const uhr = s.letzte_runde ? s.letzte_runde.split(" ").pop() + " Uhr" : null;
-  saetze.push(`${stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Hallo" : "Guten Abend"}! Hier ist dein Trading-Bot, ` +
-    `ich fahre gerade den Motor ${m.titel.replace(/\s*\(.*\)/, "")}.` + (uhr ? ` Meine letzte Prüfung war um ${uhr}.` : ""));
-
-  // Wie steht das Depot?
-  const g = e.gesamt;
-  saetze.push(`Dein Depot ist ${euroSprache(s.depotwert)} wert. ` + (Math.abs(g) < 0.5
-    ? "Das ist ungefähr so viel wie am Start."
-    : `Das sind ${euroSprache(g)} ${g > 0 ? "mehr" : "weniger"} als die ${ganz(s.startkapital)} Euro Startkapital.`));
-  if (Math.abs(e.heute) >= 0.05) saetze.push(`Heute liegen wir ${euroSprache(e.heute)} im ${e.heute > 0 ? "Plus" : "Minus"}.`);
-  else saetze.push("Heute hat sich am Depot noch nichts bewegt.");
-  if (s.gewinnkonto >= 0.01) saetze.push(`${euroSprache(s.gewinnkonto)} Gewinn habe ich schon sicher beiseitegelegt.`);
-
-  // Notbremse: dann gibt es nichts weiter zu erzählen
-  if (nb.aktiv) {
-    saetze.push("Achtung: Die Notbremse ist aktiv. Ich habe alles verkauft und handle erst wieder, wenn du mir in Telegram weiter schreibst.");
-    return saetze;
-  }
-
-  // Was halte ich, und wann verkaufe ich?
-  for (const p of s.positionen) {
-    saetze.push(`Ich halte gerade ${p.name}, seit dem Kauf ${plusMinus(p.prozent)}, also ${euroSprache(p.gewinn)} ${p.gewinn >= 0 ? "Gewinn" : "Verlust"}.`);
-    const ziel = p.einstandskurs * (1 + m.take_profit);
-    const hoch = Math.max(p.hoechstkurs || p.einstandskurs, p.kurs);
-    let sicherung = p.einstandskurs * (1 - m.stop_loss);
-    if (hoch > p.einstandskurs) sicherung = Math.max(sicherung, hoch * (1 - m.trailing_stop));
-    saetze.push(`Mein Ziel: Verkauf mit Gewinn bei ${kursSprache(ziel)}, das wären plus ${prozentSprache(m.take_profit)}. ` +
-      `Fällt der Kurs unter ${kursSprache(sicherung)}, verkaufe ich zur Sicherheit.`);
-  }
-
-  // Was kommt als Nächstes?
-  const plaetze = m.max_positionen || s.einstellungen.max_positionen;
-  if (s.positionen.length >= plaetze) {
-    saetze.push(plaetze === 1 ? "Mein einziger Platz ist belegt. Neu kaufe ich erst, wenn ich verkauft habe."
-      : "Alle Plätze sind belegt. Neu kaufe ich erst, wenn ich etwas verkauft habe.");
-  } else {
-    if (!s.positionen.length) saetze.push("Gerade habe ich nichts gekauft, das Geld liegt als Bargeld bereit.");
-    const liste = (s.kandidaten && s.kandidaten.liste) || [];
-    if (m.einstieg === "momentum") {
-      const schwelle = m.momentum_min;
-      saetze.push(`Mein nächstes Ziel: eine Rakete finden. Also einen Wert, der in etwa ${Math.round(m.momentum_kerzen / 9)} Handelstagen ` +
-        `um mindestens ${prozentSprache(schwelle)} gestiegen ist und dessen Trend weiter nach oben zeigt.`);
-      const bereit = liste.find((k) => k.kaufbereit);
-      const erster = liste.find((k) => k.momentum != null);
-      if (bereit) saetze.push(`${bereit.name} erfüllt das gerade mit ${plusMinus(bereit.momentum)}. Den kaufe ich, sobald die Börse offen ist und meine Regeln es erlauben.`);
-      else if (erster && erster.momentum > 0) {
-        const weitere = liste.filter((k) => k !== erster && k.momentum > 0).slice(0, 2).map((k) => k.name);
-        saetze.push(`Am nächsten dran ist ${erster.name} mit ${plusMinus(erster.momentum)}. Bis zur Grenze fehlen noch ${prozentSprache(schwelle - erster.momentum)}.` +
-          (weitere.length ? ` Danach kommen ${weitere.join(" und ")}.` : ""));
-        if (erster.momentum < schwelle / 2) saetze.push("Der Markt ist gerade eher ruhig, deshalb warte ich lieber, statt einen schwachen Wert zu kaufen.");
-      } else if (erster) saetze.push("Gerade steigt keiner meiner Werte richtig, der Markt ist schwach. Ich warte ab und schütze dein Geld.");
-    } else {
-      saetze.push("Ich kaufe, sobald bei einem Wert der schnelle Durchschnitt den langsamen nach oben kreuzt.");
-      const erster = liste.find((k) => !k.trend_auf);
-      if (erster) saetze.push(`Am nächsten an so einem Signal ist ${erster.name}.`);
-    }
-  }
-
-  // Börse und Sicherheit
-  if (!s.boerse_offen) saetze.push("Die Börse ist gerade zu. Aktien handle ich montags bis freitags von 9 bis halb 6, Krypto rund um die Uhr.");
-  if (nb.grenze) {
-    const luft = s.depotwert - nb.grenze;
-    saetze.push(`Bis zur Notbremse bei ${ganz(nb.grenze)} Euro sind noch ${euroSprache(luft)} Luft.` + (luft < 10 ? " Das ist knapp, ich passe gut auf." : ""));
-  }
-  const alterMin = s.letzte_runde_iso ? (Date.now() - Date.parse(s.letzte_runde_iso)) / 60000 : 0;
-  if ((s.cloud || s.bot_laeuft) && alterMin > (s.cloud ? 120 : 45))
-    saetze.push(`Achtung: Ich habe seit ${Math.round(alterMin / 60)} Stunden nicht mehr geprüft. Vielleicht hakt es gerade bei GitHub.`);
-  saetze.push("Und wie immer: alles nur Spielgeld.");
-  return saetze;
-}
-
+// ---------- „Wie läuft's?“: Lagebericht mit Stimme ----------
+// Text und Sprachdatei erzeugt der Bot bei jeder Prüfung (lagebericht.py) mit einer Microsoft-Neural-Stimme.
+// Fehlt die Datei, liest die Stimme des Geräts vor.
+var lageQuelle = null;   // "datei" oder "geraet", solange gesprochen wird
+var lageSchluessel = ""; // damit der Text beim Neuladen nicht mitten im Sprechen neu gesetzt wird
+const lageAudio = $("lage-audio");
 const sprache = "speechSynthesis" in window ? window.speechSynthesis : null;
-function stimmeWaehlen() {
-  if (!sprache) return null;
-  const deutsch = sprache.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith("de"));
-  // Möglichst eine natürliche KI-Stimme (Edge: "Natural", Chrome: "Google", Apple: "Anna"/"Helena" ...)
-  const rang = (v) => /natural|neural|online/i.test(v.name) ? 0 : /premium|enhanced|erweitert/i.test(v.name) ? 1
-    : /google|anna|helena|petra|markus|katja|seraphina|florian/i.test(v.name) ? 2 : 3;
-  return deutsch.sort((a, b) => rang(a) - rang(b))[0] || null;
-}
-if (sprache) sprache.getVoices(); // lädt die Stimmen-Liste vor (Chrome lädt sie erst beim ersten Abruf)
+if (sprache) sprache.getVoices(); // Chrome lädt die Stimmen-Liste erst beim ersten Abruf
 
-let sprichtGerade = false;
-function sprechenBeenden() {
-  sprichtGerade = false;
+function stimmeName(id) { // "de-DE-SeraphinaMultilingualNeural" -> "Seraphina"
+  const teil = String(id || "").split("-")[2] || "";
+  return teil.replace(/(Multilingual)?Neural$/, "") || "Standard";
+}
+
+function lageZeigen(s) {
+  const l = s.lagebericht || {};
+  const alterMin = s.letzte_runde_iso ? (Date.now() - Date.parse(s.letzte_runde_iso)) / 60000 : 0;
+  const alt = (s.cloud || s.bot_laeuft) && alterMin > (s.cloud ? 120 : 45);
+  $("lage-warnung").hidden = !alt;
+  if (alt) $("lage-warnung").textContent = `⚠️ Dieser Bericht ist von ${s.letzte_runde}. Seit ${Math.round(alterMin / 60)} Stunden hat der Bot nicht mehr geprüft.`;
+  const schluessel = JSON.stringify([l.saetze, l.audio]);
+  if (lageQuelle || schluessel === lageSchluessel) return;
+  lageSchluessel = schluessel;
+  $("lage-text").innerHTML = (l.saetze || []).map((t, i) => `<p data-satz="${i}">${esc(t)}</p>`).join("");
+  $("lage-unter").textContent = `Stand ${s.letzte_runde || "–"} · Antippen zum Anhören`;
+  $("lage-hinweis").textContent = l.audio
+    ? `Stimme: ${stimmeName(l.stimme)} (Microsoft-Neural-Stimme) · erstellt aus den Daten des Bots · Kein echtes Geld, keine Anlageberatung`
+    : "Vorgelesen mit der Stimme deines Geräts · erstellt aus den Daten des Bots · Kein echtes Geld, keine Anlageberatung";
+  if (l.audio) lageAudio.src = l.audio;
+  $("lage-balken").style.width = "0";
+}
+
+function lageSatzMarkieren(i) {
+  document.querySelectorAll("#lage-text p").forEach((p) => p.classList.toggle("jetzt", Number(p.dataset.satz) === i));
+}
+
+function lageKnopf(an) {
+  $("lage-knopf").setAttribute("aria-pressed", an);
+  $("lage-knopf").setAttribute("aria-label", an ? "Stopp" : "Anhören");
+  $("lage").classList.toggle("spricht", an);
+}
+
+function lageStoppen() {
+  if (!lageQuelle) return;
+  lageQuelle = null;
+  lageAudio.pause();
   if (sprache) sprache.cancel();
-  $("sprech-knopf").setAttribute("aria-pressed", "false");
-  $("sprech-text").textContent = "Wie läuft's?";
-  document.querySelectorAll("#erklaerung-text p").forEach((p) => p.classList.remove("jetzt"));
+  lageKnopf(false);
+  lageSatzMarkieren(-1);
+  $("lage-balken").style.width = "0";
+  if (letzterStatus) lageZeigen(letzterStatus); // inzwischen neuer Bericht? Jetzt übernehmen
 }
 
-function lageErklaeren() {
-  if (sprichtGerade) { sprechenBeenden(); return; }
-  if (!letzterStatus) return;
-  const saetze = lageSaetze(letzterStatus);
-  $("erklaerung-text").innerHTML = saetze.map((t) => `<p>${esc(t)}</p>`).join("");
-  $("erklaerung").hidden = false;
-  const stimme = stimmeWaehlen();
-  $("erklaerung-hinweis").textContent = sprache
-    ? `Erstellt aus den aktuellen Daten des Bots · Stimme: ${stimme ? stimme.name : "Standard"} · Kein echtes Geld, keine Anlageberatung`
-    : "Dein Browser kann nicht vorlesen, deshalb nur als Text · Kein echtes Geld, keine Anlageberatung";
-  if (!sprache) return;
-  sprache.cancel();
-  sprichtGerade = true;
-  $("sprech-knopf").setAttribute("aria-pressed", "true");
-  $("sprech-text").textContent = "Stopp";
-  const absaetze = document.querySelectorAll("#erklaerung-text p");
-  // Satz für Satz: lange Texte bricht Chrome sonst nach ca. 15 Sekunden ab
-  saetze.forEach((text, i) => {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "de-DE"; u.rate = 1.02;
-    if (stimme) u.voice = stimme;
-    u.onstart = () => absaetze.forEach((p, j) => p.classList.toggle("jetzt", j === i));
-    if (i === saetze.length - 1) u.onend = u.onerror = () => { if (sprichtGerade) sprechenBeenden(); };
-    sprache.speak(u);
+function lageAbspielen(abSatz = 0) {
+  const l = letzterStatus && letzterStatus.lagebericht;
+  if (!l || !(l.saetze || []).length) return;
+  if (sprache) sprache.cancel();
+  lageKnopf(true);
+  if (l.audio && lageAudio.src) {
+    lageQuelle = "datei";
+    lageAudio.currentTime = (l.anfaenge || [])[abSatz] || 0;
+    lageAudio.play().catch(() => { lageQuelle = null; geraetSprechen(l.saetze, abSatz); });
+  } else geraetSprechen(l.saetze, abSatz);
+}
+
+function geraetSprechen(saetze, abSatz) {
+  if (!sprache) { lageKnopf(false); return; }
+  lageQuelle = "geraet";
+  lageKnopf(true);
+  const deutsch = sprache.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith("de"));
+  const rang = (v) => /natural|neural|online/i.test(v.name) ? 0 : /premium|enhanced|erweitert/i.test(v.name) ? 1 : /google|anna|helena/i.test(v.name) ? 2 : 3;
+  const stimme = deutsch.sort((a, b) => rang(a) - rang(b))[0];
+  saetze.slice(abSatz).forEach((text, j) => {
+    const i = abSatz + j, u = new SpeechSynthesisUtterance(text);
+    u.lang = "de-DE"; if (stimme) u.voice = stimme;
+    u.onstart = () => { lageSatzMarkieren(i); $("lage-balken").style.width = `${(i + 1) / saetze.length * 100}%`; };
+    if (i === saetze.length - 1) u.onend = u.onerror = () => { if (lageQuelle === "geraet") lageStoppen(); };
+    sprache.speak(u); // Satz für Satz: lange Texte bricht Chrome sonst nach ca. 15 Sekunden ab
   });
 }
-$("sprech-knopf").addEventListener("click", lageErklaeren);
-$("titel").addEventListener("click", lageErklaeren);
-$("erklaerung-zu").addEventListener("click", () => { sprechenBeenden(); $("erklaerung").hidden = true; });
+
+lageAudio.addEventListener("timeupdate", () => {
+  if (lageQuelle !== "datei") return;
+  const anfaenge = (letzterStatus.lagebericht || {}).anfaenge || [];
+  let i = -1;
+  anfaenge.forEach((a, j) => { if (lageAudio.currentTime >= a - 0.05) i = j; });
+  lageSatzMarkieren(i);
+  if (lageAudio.duration) $("lage-balken").style.width = `${lageAudio.currentTime / lageAudio.duration * 100}%`;
+});
+lageAudio.addEventListener("ended", lageStoppen);
+$("lage-knopf").addEventListener("click", () => (lageQuelle ? lageStoppen() : lageAbspielen()));
+$("lage-text").addEventListener("click", (e) => { // auf einen Satz tippen: ab dort vorlesen
+  const p = e.target.closest("p[data-satz]");
+  if (p) { lageStoppen(); lageAbspielen(Number(p.dataset.satz)); }
+});
+// Menüpunkt „Wie läuft's?“ oder Titel antippen: Bericht öffnen und gleich vorlesen
+document.querySelector('nav button[data-ansicht="lage"]').addEventListener("click", () => { if (!lageQuelle) lageAbspielen(); });
+$("titel").addEventListener("click", () => { zeigeAnsicht("lage"); if (!lageQuelle) lageAbspielen(); });
 
 statusLaden();
 backtestAbfragen();

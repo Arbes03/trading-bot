@@ -39,6 +39,11 @@ jobs:
       - name: Pakete installieren
         run: pip install -r requirements.txt
 
+      # Stimme für „Wie läuft's?“. Schlägt das fehl, läuft der Bot trotzdem (dann Gerätestimme).
+      - name: Stimme installieren
+        run: pip install edge-tts==7.3.1
+        continue-on-error: true
+
       - name: Prüfrunde
         run: python cloud_runde.py
         env:

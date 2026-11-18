@@ -4,6 +4,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 
 import config
+import lagebericht
 from bot import ZONE, boerse_offen
 from depot import trades_lesen, verlauf_lesen
 from strategie import aktiver_motor
@@ -48,7 +49,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
     monatsstart = wert_vor(verlauf, f"{jetzt:%Y-%m}-01")
     realisiert_heute = sum(float(t["gewinn"]) for t in trades
                            if t["art"] == "VERKAUF" and t["zeit"][:10] == heute)
-    return {
+    status = {
         "jetzt": f"{jetzt:%d.%m.%Y %H:%M}",
         "cloud": cloud,
         "bot_laeuft": bot_laeuft,
@@ -114,6 +115,10 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
         "backtest": backtest,
         "nachrichten": nachrichten_status(),
     }
+    # „Wie läuft's?“: die Sprachdatei (audio, anfaenge) ergänzt cloud_runde.py, wenn sie geklappt hat
+    status["lagebericht"] = {"saetze": lagebericht.saetze_bauen(status, jetzt), "stimme": config.LAGE_STIMME,
+                             "audio": None, "anfaenge": None}
+    return status
 
 
 def wert_vor(verlauf: list[dict], datum: str) -> float:
