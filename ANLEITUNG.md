@@ -51,7 +51,7 @@ Gut zu wissen: GitHub startet geplante Läufe oft verspätet, meist kommt eine P
 
 Im Menü direkt neben **Übersicht** auf **Wie läuft's?** tippen (oder oben auf den Titel **Demo-Trading-Bot**): Der Bot erzählt mit einer echten, menschlich klingenden Stimme, wie das Depot steht, was er hält, wann er verkauft, welcher Wert einem Kauf am nächsten ist und wie viel Luft bis zur Notbremse bleibt. Der gerade gesprochene Satz wird hervorgehoben; auf einen Satz tippen springt dorthin, der runde Knopf stoppt.
 
-Der Bericht wird bei jeder Prüfrunde neu erstellt. Die Stimme ist eine kostenlose Microsoft-Neural-Stimme (Paket `edge-tts`), einstellbar in `config.py` unter `LAGE_STIMME`. Klappt die Sprachdatei einmal nicht, liest die Webseite mit der Stimme deines Geräts vor; der Bot läuft in jedem Fall weiter.
+Der Bericht wird bei jeder Prüfrunde neu erstellt. Die Stimme ist die kostenlose Microsoft-Neural-Männerstimme „Florian“ (Paket `edge-tts`), einstellbar in `config.py` unter `LAGE_STIMME`. Klappt die Sprachdatei einmal nicht, liest die Webseite mit der Stimme deines Geräts vor; der Bot läuft in jedem Fall weiter.
 
 ### Gewinnkonto (gesicherte Gewinne)
 

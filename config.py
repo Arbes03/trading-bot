@@ -262,8 +262,8 @@ MOTOR_DATEI = "motor.txt"  # merkt sich den auf der Webseite gewählten Motor
 WEB_PORT = 8050
 WEBSEITE_URL = "https://arbes03.github.io/trading-bot/"
 # Stimme für „Wie läuft's?“ (Microsoft-Neural-Stimme, kostenlos). Andere gute Stimmen:
-# "de-DE-FlorianMultilingualNeural" (Mann), "de-DE-KatjaNeural", "de-DE-ConradNeural"
-LAGE_STIMME = "de-DE-SeraphinaMultilingualNeural"
+# "de-DE-SeraphinaMultilingualNeural" (Frau), "de-DE-ConradNeural" (Mann), "de-DE-KatjaNeural" (Frau)
+LAGE_STIMME = "de-DE-FlorianMultilingualNeural"
 LAGE_TEMPO = "+5%"                 # etwas schneller als normal klingt natürlicher
 
 # --- Handy-Nachrichten (App "ntfy") ---
