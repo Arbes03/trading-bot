@@ -15,7 +15,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
                  bot_laeuft: bool, letzte_runde: str | None, autostart: bool, backtest: dict,
                  cloud: bool = False, pausiert: dict | None = None,
                  verkauf_angefordert: str | None = None, gewinnkonto: float = 0.0,
-                 letzte_runde_iso: str | None = None) -> dict:
+                 letzte_runde_iso: str | None = None, kandidaten: dict | None = None) -> dict:
     positionen = []
     for ticker, pos in positionen_roh.items():
         kurs = kurse.get(ticker) or pos["einstandskurs"]
@@ -31,6 +31,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
             "gewinn": pos["stueck"] * kurs - pos["kosten"],
             "prozent": kurs / pos["einstandskurs"] - 1,
             "kaufzeit": pos["kaufzeit"][:16],
+            "hoechstkurs": pos.get("hoechstkurs", pos["einstandskurs"]),  # für den Trailing-Stop
         })
     depotwert = bargeld + sum(p["wert"] for p in positionen) + gewinnkonto
 
@@ -82,6 +83,7 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
             "realisiert_heute": realisiert_heute,
         },
         "markt": markt,
+        "kandidaten": kandidaten or {},  # {"zeit": ..., "liste": [...]}: wer als Nächstes gekauft werden könnte
         "trades": list(reversed(trades[-100:])),
         "verkaeufe": verkaeufe_auswerten(trades),
         "tage": tagesergebnisse(verlauf, heute, depotwert),

@@ -15,6 +15,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
+import bot as bot_modul
 import config
 from backtest import backtest_ausfuehren
 from bot import ZONE, Bot, boerse_offen
@@ -101,6 +102,8 @@ def status() -> dict:
         pausiert=depot.pausiert,
         verkauf_angefordert=depot.verkauf_angefordert,
         gewinnkonto=depot.gewinnkonto,
+        kandidaten={"zeit": f"{bot.letzte_runde:%d.%m. %H:%M}" if bot.letzte_runde else None,
+                    "liste": list(bot_modul.letzte_kandidaten)},
     )
 
 

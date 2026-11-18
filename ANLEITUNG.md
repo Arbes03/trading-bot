@@ -42,10 +42,14 @@ Kosten: 0 €. Du brauchst nur ein kostenloses GitHub-Konto.
 6. **PC-Bot ausschalten:** Damit nicht zwei Bots mit zwei verschiedenen Depots handeln: Doppelklick auf `autostart_ausschalten` und auf der lokalen Webseite *Bot & Webseite beenden*.
 
 **Bei GitHub etwas ändern** (im Projekt auf die Datei klicken → Stift-Symbol → *Commit changes*):
-- Motor wechseln: Datei `motor.txt` → `vorsichtig` oder `schnell` hineinschreiben
+- Motor wechseln: Datei `motor.txt` → z. B. `turbo`, `vorsichtig` oder `schnell` hineinschreiben
 - Von vorn anfangen: Dateien `trades.csv`, `verlauf.csv`, `protokoll.json` löschen und in `depot.json` den Inhalt durch `{"bargeld": 10000.0, "positionen": {}}` ersetzen
 
-Gut zu wissen: GitHub startet geplante Läufe manchmal ein paar Minuten zu spät. Für diesen Bot ist das egal.
+Gut zu wissen: GitHub startet geplante Läufe oft verspätet, meist kommt eine Prüfung etwa jede Stunde. Für diesen Bot ist das egal.
+
+### „Wie läuft's?“ – der Bot erzählt dir die Lage
+
+Oben auf der Webseite auf **Wie läuft's?** oder auf den Titel **Demo-Trading-Bot** tippen: Der Bot erklärt in ein paar Sätzen und mit Stimme, wie das Depot steht, was er hält, wann er verkauft, welcher Wert einem Kauf am nächsten ist und wie viel Luft bis zur Notbremse bleibt. Noch einmal tippen stoppt die Stimme. Der Text entsteht aus den aktuellen Daten des Bots, vorgelesen wird mit der Stimme deines Geräts (kostenlos, ohne Anmeldung).
 
 ### Gewinnkonto (gesicherte Gewinne)
 

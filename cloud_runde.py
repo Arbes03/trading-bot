@@ -15,6 +15,7 @@ import config
 from benachrichtigung import (eingerichtet, notbremse_melden, senden, stand_melden, tagesabschluss_melden, wochenbericht_melden,
                               telegram_befehle_holen, telegram_einrichten, trade_melden, willkommen_melden,
                               wunsch_verkauf_melden)
+import bot
 from bot import ZONE, boerse_offen, runde
 from handel import uhrzeit
 from daten import fuer_alle, marktueberblick
@@ -78,6 +79,9 @@ def main():
         kurse, meldungen, anzahl = runde(depot, motor, tagesstart_ermitteln(jetzt))
         for m in meldungen:
             melden(m)
+        # Kandidaten merken; nachts (nur Krypto) bleiben die Aktien vom letzten Handelstag stehen
+        if bot.letzte_kandidaten and (boerse_offen(jetzt) or not gemerkt.get("kandidaten")):
+            gemerkt["kandidaten"] = {"zeit": f"{jetzt:%d.%m. %H:%M}", "liste": list(bot.letzte_kandidaten)}
         melden(f"Prüfrunde fertig ({motor.titel}): Depot {depot.gesamtwert(kurse):,.2f} EUR, "
                f"Kurse für {anzahl}/{len(config.WATCHLIST)} Werte")
         # Warnung aufs Handy, wenn zur Börsenzeit die meisten Kurse fehlen (höchstens einmal pro Tag)
@@ -121,6 +125,7 @@ def main():
         pausiert=depot.pausiert,
         verkauf_angefordert=depot.verkauf_angefordert,
         gewinnkonto=depot.gewinnkonto,
+        kandidaten=gemerkt.get("kandidaten"),
     )
     os.makedirs(AUSGABE_ORDNER, exist_ok=True)
     with open(os.path.join(AUSGABE_ORDNER, "status.json"), "w", encoding="utf-8") as f:

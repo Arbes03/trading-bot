@@ -13,9 +13,11 @@ import config
 from daten import fuer_alle, kurse_laden
 from depot import Depot, verlauf_eintragen
 from handel import kaeufe_erlaubt, notbremse_pruefen, ticker_pruefen, uhrzeit, wunsch_verkauf_pruefen
-from strategie import Motor, aktiver_motor, reihenfolge
+from strategie import Motor, aktiver_motor, momentum_bedingung, reihenfolge
 
 ZONE = ZoneInfo(config.ZEITZONE)
+KANDIDATEN_ANZAHL = 5
+letzte_kandidaten: list[dict] = []  # die Werte, die beim letzten Mal am nächsten an einem Kauf waren
 
 
 def boerse_offen(jetzt: datetime) -> bool:
@@ -37,6 +39,8 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
     max_alter = timedelta(minutes=motor.kerzen_minuten + 30)
     daten = {t: k for t, k in geladen.items() if t in handelbar
              and len(k) >= motor.aufwaermen + 2 and jetzt - k[-1]["zeit"] <= max_alter}
+
+    letzte_kandidaten[:] = kandidaten_bestimmen(daten, depot.positionen, motor)
 
     # Laden dauert, gehandelt wird erst danach unter der Sperre
     with sperre or nullcontext():
@@ -65,6 +69,29 @@ def runde(depot: Depot, motor: Motor, tagesstart: float, sperre=None) -> tuple[d
         if all(t in geladen and geladen[t] for t in depot.positionen):
             verlauf_eintragen(config.VERLAUF_DATEI, jetzt, depot.gesamtwert(kurse), halten)
     return kurse, meldungen, len(daten)
+
+
+def kandidaten_bestimmen(daten: dict[str, list[dict]], positionen: dict, motor: Motor) -> list[dict]:
+    """Die nicht gehaltenen Werte, die einem Kauf am nächsten sind (für die Erklärung auf der Webseite)."""
+    liste = []
+    for ticker, kerzen in daten.items():
+        k = kerzen[-2]  # abgeschlossene Kerze, wie beim Handeln
+        if ticker in positionen or k.get("ema_lang") is None:
+            continue
+        liste.append({
+            "ticker": ticker,
+            "name": config.WATCHLIST.get(ticker, ticker),
+            "momentum": k.get("momentum"),
+            "trend_auf": k["ema_kurz"] > k["ema_lang"],
+            "abstand": k["ema_kurz"] / k["ema_lang"] - 1,  # schneller vs. langsamer Durchschnitt
+            "rsi": k["rsi"],
+            "kaufbereit": motor.einstieg == "momentum" and momentum_bedingung(k, motor),
+        })
+    if motor.einstieg == "momentum":
+        liste.sort(key=lambda e: e["momentum"] if e["momentum"] is not None else -1, reverse=True)
+    else:
+        liste.sort(key=lambda e: e["abstand"], reverse=True)
+    return liste[:KANDIDATEN_ANZAHL]
 
 
 class Bot:
