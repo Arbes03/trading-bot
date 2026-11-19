@@ -1,5 +1,9 @@
 [
  {
+  "zeit": "19.11. 17:55",
+  "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 497.18 EUR, Kurse für 4/70 Werte"
+ },
+ {
   "zeit": "19.11. 16:50",
   "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 494.93 EUR, Kurse für 70/70 Werte"
  },
@@ -793,10 +797,6 @@
  },
  {
   "zeit": "12.11. 05:41",
-  "text": "Prüfrunde fertig (Vorsichtig): Depot 500.28 EUR, Kurse für 4/60 Werte"
- },
- {
-  "zeit": "12.11. 04:44",
   "text": "Prüfrunde fertig (Vorsichtig): Depot 500.28 EUR, Kurse für 4/60 Werte"
  }
 ]
