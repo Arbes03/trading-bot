@@ -1,16 +1,7 @@
 {
-  "bargeld": 23.391624011312445,
+  "bargeld": 471.9396033159709,
   "gewinnkonto": 0.5597405711314565,
-  "positionen": {
-    "1YD.DE": {
-      "stueck": 1.445621,
-      "einstandskurs": 320.580125,
-      "hoechstkurs": 334.6499938964844,
-      "kaufzeit": "2026-11-18 16:50:55.510046+01:00",
-      "kosten": 464.437360882625,
-      "motor": "turbo"
-    }
-  },
+  "positionen": {},
   "letzte_verkaeufe": {
     "MRK.DE": "2026-11-12 15:09:16.052414+01:00",
     "SIE.DE": "2026-11-13 09:52:34.445560+01:00",
@@ -18,13 +9,18 @@
     "EOAN.DE": "2026-11-17 09:22:00.313616+01:00",
     "HNR1.DE": "2026-11-17 09:22:00.313616+01:00",
     "SAP.DE": "2026-11-17 09:22:00.313616+01:00",
-    "SXRT.DE": "2026-11-17 09:22:00.313616+01:00"
+    "SXRT.DE": "2026-11-17 09:22:00.313616+01:00",
+    "1YD.DE": "2026-11-20 09:56:28.763294+01:00"
   },
   "kaeufe_heute": {
     "tag": "2026-11-18",
     "anzahl": 1
   },
-  "pausiert": null,
+  "pausiert": {
+    "seit": "2026-11-20 09:56",
+    "grund": "Depot bei 473.61 EUR, unter der Grenze von 475.00 EUR (-5% vom Startkapital)",
+    "art": "notbremse"
+  },
   "verkauf_angefordert": null,
   "vergleich_start": {
     "kurs": 127.31500244140625,

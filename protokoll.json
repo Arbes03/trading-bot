@@ -1,5 +1,13 @@
 [
  {
+  "zeit": "20.11. 09:56",
+  "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 472.50 EUR, Kurse für 70/70 Werte"
+ },
+ {
+  "zeit": "20.11. 09:56",
+  "text": "NOTBREMSE: alles verkauft, Bot pausiert. Depot bei 473.61 EUR, unter der Grenze von 475.00 EUR (-5% vom Startkapital)"
+ },
+ {
   "zeit": "20.11. 08:57",
   "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 497.18 EUR, Kurse für 4/70 Werte"
  },
@@ -789,14 +797,6 @@
  },
  {
   "zeit": "12.11. 20:04",
-  "text": "Prüfrunde fertig (Vorsichtig): Depot 498.85 EUR, Kurse für 4/60 Werte"
- },
- {
-  "zeit": "12.11. 19:03",
-  "text": "Prüfrunde fertig (Vorsichtig): Depot 498.85 EUR, Kurse für 4/60 Werte"
- },
- {
-  "zeit": "12.11. 18:13",
   "text": "Prüfrunde fertig (Vorsichtig): Depot 498.85 EUR, Kurse für 4/60 Werte"
  }
 ]
