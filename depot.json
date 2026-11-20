@@ -17,8 +17,8 @@
     "anzahl": 1
   },
   "pausiert": {
-    "seit": "2026-11-20 09:56",
-    "grund": "Depot bei 473.61 EUR, unter der Grenze von 475.00 EUR (-5% vom Startkapital)",
+    "seit": "2026-11-20 11:53",
+    "grund": "Depot bei 472.50 EUR, unter der Grenze von 475.00 EUR (-5% vom Startkapital)",
     "art": "notbremse"
   },
   "verkauf_angefordert": null,
