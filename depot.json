@@ -16,15 +16,11 @@
     "tag": "2026-11-18",
     "anzahl": 1
   },
-  "pausiert": {
-    "seit": "2026-11-20 11:53",
-    "grund": "Depot bei 472.50 EUR, unter der Grenze von 475.00 EUR (-5% vom Startkapital)",
-    "art": "notbremse"
-  },
+  "pausiert": null,
   "verkauf_angefordert": null,
   "vergleich_start": {
     "kurs": 127.31500244140625,
     "zeit": "2026-11-08 14:03"
   },
-  "notbremse_basis": null
+  "notbremse_basis": 472.4993438871023
 }

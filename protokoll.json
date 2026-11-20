@@ -1,5 +1,13 @@
 [
  {
+  "zeit": "20.11. 20:10",
+  "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 472.50 EUR, Kurse für 4/70 Werte"
+ },
+ {
+  "zeit": "20.11. 20:10",
+  "text": "Pause aufgehoben, der Bot handelt wieder. Die Notbremse greift ab jetzt bei 448.87 EUR."
+ },
+ {
   "zeit": "20.11. 19:20",
   "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 472.50 EUR, Kurse für 4/70 Werte"
  },
@@ -790,13 +798,5 @@
  {
   "zeit": "13.11. 09:52",
   "text": "VERKAUF 0.362941 x Siemens zu 275.75 EUR | -1.89 EUR | Trailing-Stop (+0.14%)"
- },
- {
-  "zeit": "13.11. 08:57",
-  "text": "Prüfrunde fertig (Vorsichtig): Depot 498.85 EUR, Kurse für 4/60 Werte"
- },
- {
-  "zeit": "13.11. 07:41",
-  "text": "Prüfrunde fertig (Vorsichtig): Depot 498.85 EUR, Kurse für 4/60 Werte"
  }
 ]
