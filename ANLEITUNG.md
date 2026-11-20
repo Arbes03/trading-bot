@@ -66,12 +66,16 @@ Gewinnkonto) und weniger Rückgang (8,9 % statt 12,1 %), aber am Ende nur noch c
 
 ### Notbremse
 
-Fällt das Depot **5 % unter das Startkapital** (unter 9.500 €), verkauft der Bot **alles** und **pausiert**:
+Fällt das Depot **5 % unter das Startkapital** (bei 500 € also unter 475 €), verkauft der Bot **alles** und **pausiert**:
 Er kauft nichts mehr, bis du ihn freigibst. Du bekommst dazu eine Telegram-Nachricht, und die Webseite zeigt einen roten Hinweis.
 
-**Freigeben:** Im GitHub-Projekt auf *Add file → Create new file*, Name `notbremse_aufheben.txt` (Inhalt egal), *Commit changes*.
-Der Bot hebt die Pause beim nächsten Lauf auf, löscht die Datei wieder und meldet sich in Telegram.
-Die Grenze stellst du in `config.py` bei `NOTBREMSE_AB` ein (`None` = aus).
+**Freigeben:** In Telegram `/weiter` schreiben. Oder im GitHub-Projekt auf *Add file → Create new file*, Name `notbremse_aufheben.txt` (Inhalt egal), *Commit changes*.
+Der Bot hebt die Pause beim nächsten Lauf auf und meldet sich in Telegram.
+
+**Nach der Freigabe misst die Notbremse neu:** Sie greift dann 5 % unter dem Depotwert bei der Freigabe (z. B. 472,50 € → 448,87 €). Sonst würde sie sofort wieder auslösen, weil das Depot ja schon unter der alten Grenze liegt.
+**Untergrenze:** Unter 85 % vom Startkapital (425 €) lässt sich der Bot nicht mehr freigeben, dann hilft nur noch das Zurücksetzen. So kann er nicht immer weiter verlieren.
+
+Einstellen in `config.py`: `NOTBREMSE_AB` (Abstand, `None` = aus) und `NOTBREMSE_BODEN` (Untergrenze).
 
 Im Backtest hätte die Notbremse den Verlust des schnellen Motors von −38 % auf −5 % begrenzt;
 beim vorsichtigen Motor hat sie in den letzten 2 Jahren nie ausgelöst.
@@ -113,7 +117,7 @@ Token vergessen? Bei @BotFather `/mybots` → deinen Bot → **API Token**.
 |---|---|
 | **Vorsichtig** (Standard) | Stundenkerzen, kauft nur in längeren Aufwärtstrends, darf über Nacht halten, höchstens 2 Käufe pro Tag, wenige Trades |
 | **Offensiv (Momentum)** | Stundenkerzen, kauft die stärksten Aufsteiger der letzten ca. 5 Tage, bis zu 33 % pro Aktie, höchstens 3 Positionen, Stop-Loss −3 % |
-| **Turbo (1 Rakete)** | Stundenkerzen, steckt ca. 95 % in den einen Wert, der in ca. 3 Tagen am stärksten gestiegen ist (mind. +5 %), Stop-Loss −5 %, Gewinnmitnahme +15 %. Sehr riskant |
+| **Turbo (1 Rakete)** | Stundenkerzen, steckt ca. 70 % in den einen Wert, der in ca. 3 Tagen am stärksten gestiegen ist (mind. +5 %), Stop-Loss −5 %, Gewinnmitnahme +15 %. Sehr riskant |
 | **Schnell (Daytrading)** | 5-Minuten-Kerzen, reagiert auf jede kleine Bewegung, verkauft abends alles, sehr viele Trades |
 
 Nach einem Motorwechsel verkauft der Bot Positionen des alten Motors (zur Börsenzeit), sobald sie die Plätze des neuen Motors blockieren.

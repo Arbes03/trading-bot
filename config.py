@@ -217,7 +217,10 @@ MOTOREN = {
         einstieg="momentum",
         momentum_kerzen=24,          # Anstieg der letzten 24 Stundenkerzen (ca. 3 Handelstage)
         momentum_min=0.05,           # mindestens +5 %
-        max_anteil=0.95,             # fast alles in einen Wert
+        max_anteil=0.70,             # 70 % in einen Wert, der Rest bleibt als Puffer
+        # 2-Wochen-Test (20.11.2026, 70 Werte, mit Notbremse): 70 % statt 95 % -> 57 % statt 53 % der Fenster im Plus,
+        # nur 28 % statt 36 % unter -5 %, schlechtestes -11 % statt -14,6 %, Mittel +1,2 % statt +1,4 %.
+        # 50 %: noch sicherer, aber nur 16 % der Fenster über +5 %. Engerer Stop-Loss (3-4 %) brachte nichts.
         max_positionen=1,
         # Gewinn-Prüfung vor dem Kauf (früheres Verhalten desselben Signals beim selben Wert) ist eingebaut, aber aus:
         # Im 2-Wochen-Test (Nov. 2026) war sie in allen Varianten schlechter (z. B. 34-41 % der Fenster im Plus statt 47 %).
@@ -253,6 +256,8 @@ BOERSE_AUF = "09:00"
 BOERSE_ZU = "17:30"
 ALLES_VERKAUFEN_AB = "17:20"  # nur Daytrading-Motor: nichts über Nacht halten
 KEINE_KAEUFE_VOR = "09:30"    # erste halbe Stunde ist oft sehr wild
+KEINE_KAEUFE_AB = None        # z. B. "16:00": danach keine neuen Aktien/ETFs mehr (Kurssprung über Nacht), Krypto weiter.
+                              # Getestet mit Turbo (Nov. 2026): 15-17 Uhr waren alle schlechter als ohne, daher aus.
 
 # --- Dateien ---
 DEPOT_DATEI = "depot.json"

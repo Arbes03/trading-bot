@@ -9,6 +9,11 @@ def uhrzeit(zeit) -> str:
     return zeit.strftime("%H:%M")
 
 
+def kurz_vor_schluss(ticker: str, zeit) -> bool:
+    """Kurz vor Börsenschluss keine neuen Aktien/ETFs: über Nacht kann der Bot nicht reagieren (Krypto läuft weiter)."""
+    return bool(config.KEINE_KAEUFE_AB) and not config.rund_um_die_uhr(ticker)         and uhrzeit(zeit) >= config.KEINE_KAEUFE_AB
+
+
 def kaeufe_erlaubt(zeit, depotwert: float, tagesstart: float, motor: Motor) -> bool:
     """Neue Käufe nur zu ruhigen Zeiten und solange das Tagesverlust-Limit nicht erreicht ist."""
     if uhrzeit(zeit) < config.KEINE_KAEUFE_VOR:
@@ -85,7 +90,7 @@ def ticker_pruefen(depot: Depot, motor: Motor, ticker: str, letzte: dict, vorlet
             return f"VERKAUF {stueck:g} x {name} zu {kurs:.2f} EUR | {gewinn:+.2f} EUR | {grund}"
         depot.hoechstkurs_aktualisieren(ticker, kurs)
 
-    elif darf_kaufen and depot.darf_kaufen(ticker, zeit, motor):
+    elif darf_kaufen and not kurz_vor_schluss(ticker, zeit) and depot.darf_kaufen(ticker, zeit, motor):
         grund = kauf_signal(letzte, vorletzte, motor)
         if not grund:
             return None
