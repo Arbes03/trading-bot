@@ -1,5 +1,9 @@
 [
  {
+  "zeit": "20.11. 04:19",
+  "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 497.18 EUR, Kurse für 4/70 Werte"
+ },
+ {
   "zeit": "20.11. 03:29",
   "text": "Prüfrunde fertig (Turbo (1 Rakete)): Depot 497.18 EUR, Kurse für 4/70 Werte"
  },
@@ -794,9 +798,5 @@
  {
   "zeit": "12.11. 15:09",
   "text": "Prüfrunde fertig (Vorsichtig): Depot 499.35 EUR, Kurse für 60/60 Werte"
- },
- {
-  "zeit": "12.11. 15:09",
-  "text": "VERKAUF 0.6651 x Merck zu 147.05 EUR | -4.11 EUR | Trailing-Stop (-2.09%)"
  }
 ]
