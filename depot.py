@@ -23,6 +23,7 @@ class Depot:
         self.pausiert: dict | None = None  # Notbremse/Wunsch: {"seit": ..., "grund": ..., "art": ...}
         self.verkauf_angefordert: str | None = None  # "alles verkaufen" gewünscht, wird bei offener Börse ausgeführt
         self.vergleich_start: dict | None = None  # Kurs des Vergleichs-ETF beim Start ("einfach halten")
+        self.notbremse_basis: float | None = None  # Depotwert bei der letzten Freigabe (sonst zählt das Startkapital)
         if datei and os.path.exists(datei):
             with open(datei, encoding="utf-8") as f:
                 daten = json.load(f)
@@ -34,6 +35,7 @@ class Depot:
             self.pausiert = daten.get("pausiert")
             self.verkauf_angefordert = daten.get("verkauf_angefordert")
             self.vergleich_start = daten.get("vergleich_start")
+            self.notbremse_basis = daten.get("notbremse_basis")
 
     def darf_kaufen(self, ticker: str, zeit: datetime, motor) -> bool:
         """Bremsen des Motors: Sperre nach Verkauf und Höchstzahl Käufe pro Tag."""
@@ -45,6 +47,36 @@ class Depot:
             if zeit - datetime.fromisoformat(verkauft) < timedelta(hours=motor.sperre_stunden):
                 return False
         return True
+
+    def notbremse_grenze(self) -> float | None:
+        """Unter diesem Depotwert verkauft die Notbremse alles: 5 % unter dem Startkapital bzw. unter dem
+        Wert bei der letzten Freigabe, aber nie tiefer als die Untergrenze."""
+        if not config.NOTBREMSE_AB:
+            return None
+        grenze = (self.notbremse_basis or config.STARTKAPITAL) * (1 - config.NOTBREMSE_AB)
+        return max(grenze, self.notbremse_boden() or 0)
+
+    @staticmethod
+    def notbremse_boden() -> float | None:
+        return config.STARTKAPITAL * (1 - config.NOTBREMSE_BODEN) if config.NOTBREMSE_BODEN else None
+
+    def freigeben(self) -> str:
+        """Pause aufheben. Nach einer Notbremse misst sie ab jetzt vom aktuellen Depotwert (sonst würde sie
+        sofort wieder auslösen). Gibt eine Erklärung zurück; löst eine Exception aus, wenn die Untergrenze erreicht ist."""
+        notbremse = bool(self.pausiert) and self.pausiert.get("art", "notbremse") == "notbremse"
+        text = ""
+        if notbremse:
+            wert = self.gesamtwert({})  # nach der Notbremse ist (fast) alles Bargeld
+            boden = self.notbremse_boden()
+            if boden and wert <= boden:
+                raise ValueError(f"Das Depot ({wert:,.2f} EUR) liegt an der Untergrenze von {boden:,.2f} EUR. "
+                                 "Weiterhandeln geht nur nach dem Zurücksetzen des Depots.")
+            self.notbremse_basis = wert
+            text = f"Die Notbremse greift ab jetzt bei {self.notbremse_grenze():,.2f} EUR."
+        self.pausiert = None
+        self.verkauf_angefordert = None
+        self.speichern()
+        return text
 
     def vergleichswert(self, kurse: dict[str, float], zeit) -> float | None:
         """Was wäre das Startkapital wert, wenn man es am Start einfach in den Vergleichs-ETF gesteckt hätte?"""
@@ -129,6 +161,7 @@ class Depot:
         self.pausiert = None
         self.verkauf_angefordert = None
         self.vergleich_start = None
+        self.notbremse_basis = None
         for datei in (self.trades_datei, config.VERLAUF_DATEI):
             if datei and os.path.exists(datei):
                 os.remove(datei)
@@ -141,7 +174,7 @@ class Depot:
             json.dump({"bargeld": self.bargeld, "gewinnkonto": self.gewinnkonto, "positionen": self.positionen,
                        "letzte_verkaeufe": self.letzte_verkaeufe, "kaeufe_heute": self.kaeufe_heute,
                        "pausiert": self.pausiert, "verkauf_angefordert": self.verkauf_angefordert,
-                       "vergleich_start": self.vergleich_start},
+                       "vergleich_start": self.vergleich_start, "notbremse_basis": self.notbremse_basis},
                       f, indent=2, ensure_ascii=False)
 
     def _protokollieren(self, zeit, art, ticker, stueck, kurs, grund, gewinn):

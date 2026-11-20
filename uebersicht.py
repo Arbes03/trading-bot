@@ -16,7 +16,8 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
                  bot_laeuft: bool, letzte_runde: str | None, autostart: bool, backtest: dict,
                  cloud: bool = False, pausiert: dict | None = None,
                  verkauf_angefordert: str | None = None, gewinnkonto: float = 0.0,
-                 letzte_runde_iso: str | None = None, kandidaten: dict | None = None) -> dict:
+                 letzte_runde_iso: str | None = None, kandidaten: dict | None = None,
+                 notbremse_grenze: float | None = None) -> dict:
     positionen = []
     for ticker, pos in positionen_roh.items():
         kurs = kurse.get(ticker) or pos["einstandskurs"]
@@ -60,7 +61,8 @@ def status_bauen(positionen_roh: dict, bargeld: float, kurse: dict, markt: list,
             "grund": pausiert["grund"] if pausiert else None,
             "art": (pausiert or {}).get("art", "notbremse"),
             "verkauf_angefordert": verkauf_angefordert,
-            "grenze": config.STARTKAPITAL * (1 - config.NOTBREMSE_AB) if config.NOTBREMSE_AB else None,
+            "grenze": notbremse_grenze if notbremse_grenze is not None else
+                      (config.STARTKAPITAL * (1 - config.NOTBREMSE_AB) if config.NOTBREMSE_AB else None),
             "prozent": config.NOTBREMSE_AB,
         },
         "boerse_offen": boerse_offen(jetzt),

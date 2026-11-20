@@ -130,7 +130,9 @@ MAX_ANTEIL_PRO_POSITION = 0.20  # höchstens 20 % des Depotwerts pro Aktie
 MAX_POSITIONEN = 5
 TAGES_VERLUST_LIMIT = 0.03      # ab -3 % an einem Tag: keine neuen Käufe mehr
 GEWINNE_SICHERN = True          # Gewinne aus Verkäufen aufs Gewinnkonto legen, nie wieder investieren
-NOTBREMSE_AB = 0.05             # Depot 5 % unter Startkapital: alles verkaufen und pausieren (None = aus)
+NOTBREMSE_AB = 0.05             # Depot 5 % unter Startkapital: alles verkaufen und pausieren (None = aus).
+                                # Nach /weiter zählt der Depotwert bei der Freigabe statt des Startkapitals.
+NOTBREMSE_BODEN = 0.15          # Untergrenze: unter 85 % vom Startkapital (425 €) ist Schluss, /weiter hilft dann nicht mehr
 
 # --- Strategie-Motoren ---
 # Der Bot handelt mit einem Motor. Umschalten geht auf der Webseite (Strategie & Einstellungen).

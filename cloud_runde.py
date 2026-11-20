@@ -127,6 +127,7 @@ def main():
         verkauf_angefordert=depot.verkauf_angefordert,
         gewinnkonto=depot.gewinnkonto,
         kandidaten=gemerkt.get("kandidaten"),
+        notbremse_grenze=depot.notbremse_grenze(),
     )
     os.makedirs(AUSGABE_ORDNER, exist_ok=True)
     # „Wie läuft's?“ mit echter Stimme. Klappt das nicht, liest die Webseite mit der Gerätestimme vor.
@@ -212,11 +213,14 @@ def befehl_ausfuehren(befehl: str, depot: Depot, jetzt: datetime, melden) -> boo
 
 def weiter_handeln(depot: Depot, melden):
     """Pause bzw. angeforderten Verkauf aufheben."""
-    depot.pausiert = None
-    depot.verkauf_angefordert = None
-    depot.speichern()
-    melden("Pause aufgehoben, der Bot handelt wieder.")
-    senden("✅ Weiter geht's", "Ich handle ab jetzt wieder nach meinen Regeln.", tags=["white_check_mark"])
+    try:
+        text = depot.freigeben()
+    except ValueError as grund:
+        melden(f"Freigabe abgelehnt: {grund}")
+        senden("⛔ Untergrenze erreicht", f"{grund}\nSo schütze ich dein Spielgeld vor weiteren Verlusten.")
+        return
+    melden(f"Pause aufgehoben, der Bot handelt wieder. {text}".strip())
+    senden("✅ Weiter geht's", f"Ich handle ab jetzt wieder nach meinen Regeln. {text}".strip(), tags=["white_check_mark"])
 
 
 def gemerktes_laden() -> dict:

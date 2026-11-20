@@ -938,7 +938,7 @@ async function statusLaden() {
     ...(m.sperre_stunden ? [`Nach einem Verkauf wird dieselbe Aktie <strong>${m.sperre_stunden} Stunden</strong> nicht wieder gekauft`] : []),
     `Höchstens <strong>${pz(m.max_anteil || e.max_anteil)}</strong> des Depots pro Aktie, höchstens <strong>${m.max_positionen || e.max_positionen}</strong> Positionen gleichzeitig`,
     `Ab <strong>−${pz(e.tages_limit)}</strong> an einem Tag keine neuen Käufe mehr`,
-    ...(s.notbremse && s.notbremse.prozent ? [`🚨 <strong>Notbremse:</strong> Fällt das Depot unter <strong>${eur.format(s.notbremse.grenze)}</strong> (−${pz(s.notbremse.prozent)} vom Startkapital), verkauft der Bot alles und pausiert, bis du ihn freigibst`] : []),
+    ...(s.notbremse && s.notbremse.prozent ? [`🚨 <strong>Notbremse:</strong> Fällt das Depot unter <strong>${eur.format(s.notbremse.grenze)}</strong> (−${pz(s.notbremse.prozent)} vom Startkapital bzw. vom Stand bei deiner letzten Freigabe), verkauft der Bot alles und pausiert, bis du ihn freigibst`] : []),
     `Kosten: <strong>${eur.format(e.gebuehr)}</strong> Gebühr pro Order plus Spread`,
     `Handelszeit: <strong>${esc(e.boerse)} Uhr</strong>, geprüft wird alle ${Math.round(m.pruef_abstand / 60)} Minuten`,
   ].map((t) => `<li>${t}</li>`).join("");

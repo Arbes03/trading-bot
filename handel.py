@@ -26,15 +26,16 @@ def notbremse_pruefen(depot: Depot, kurse: dict[str, float], zeit,
     Standard: alle). Der Rest wird bei der nächsten Gelegenheit verkauft.
     Gibt eine Meldung zurück, wenn die Notbremse gerade ausgelöst wurde.
     """
-    if not config.NOTBREMSE_AB or depot.pausiert:
+    grenze = depot.notbremse_grenze()
+    if grenze is None or depot.pausiert:
         return None
     wert = depot.gesamtwert(kurse)
-    grenze = config.STARTKAPITAL * (1 - config.NOTBREMSE_AB)
     if wert > grenze:
         return None
+    bezug = "vom Wert bei der letzten Freigabe" if depot.notbremse_basis else "vom Startkapital"
     alles_verkaufen(depot, kurse if handelbare_kurse is None else handelbare_kurse, zeit, "Notbremse", "notbremse",
                     f"Depot bei {wert:,.2f} EUR, unter der Grenze von {grenze:,.2f} EUR "
-                    f"(-{config.NOTBREMSE_AB:.0%} vom Startkapital)")
+                    f"(-{config.NOTBREMSE_AB:.0%} {bezug})")
     return f"NOTBREMSE: alles verkauft, Bot pausiert. {depot.pausiert['grund']}"
 
 

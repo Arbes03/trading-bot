@@ -102,6 +102,7 @@ def status() -> dict:
         pausiert=depot.pausiert,
         verkauf_angefordert=depot.verkauf_angefordert,
         gewinnkonto=depot.gewinnkonto,
+        notbremse_grenze=depot.notbremse_grenze(),
         kandidaten={"zeit": f"{bot.letzte_runde:%d.%m. %H:%M}" if bot.letzte_runde else None,
                     "liste": list(bot_modul.letzte_kandidaten)},
     )
@@ -172,9 +173,10 @@ class Anfrage(BaseHTTPRequestHandler):
             zuruecksetzen()
         elif teile.path == "/api/notbremse_aufheben":
             with sperre:
-                depot.pausiert = None
-                depot.speichern()
-            melden("Notbremse aufgehoben, der Bot handelt wieder.")
+                try:
+                    melden(f"Notbremse aufgehoben, der Bot handelt wieder. {depot.freigeben()}".strip())
+                except ValueError as grund:
+                    melden(f"Freigabe abgelehnt: {grund}")
         elif teile.path == "/api/beenden":
             melden("Bot und Webseite werden beendet.")
             threading.Thread(target=server.shutdown, daemon=True).start()
