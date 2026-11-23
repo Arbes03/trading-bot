@@ -104,6 +104,9 @@ GitHub startet die Läufe oft verspätet, rechne mit 15–60 Minuten bis zur Ant
 
 **Automatische Nachrichten:** bei jedem Kauf und Verkauf, an Handelstagen um 12 Uhr ein Zwischenstand
 (`ZWISCHENSTAND_UM` in `config.py`) und nach Börsenschluss ein Tagesabschluss.
+**Jeden Morgen** (auch am Wochenende, ab 8 Uhr mit der ersten Prüfung) ein Morgengruß: „Ich laufe ✅“, Depotstand,
+was der Bot hält und wann er verkauft, welcher Wert einem Kauf am nächsten ist, Abstand zur Notbremse und der Plan
+für die Woche. Kommt bis 12 Uhr kein Morgengruß, lief der Bot den ganzen Morgen nicht (`MORGENGRUSS_AB` in `config.py`).
 
 Beim nächsten Lauf kommt die Nachricht „Trading-Bot verbunden ✅“. Ob es klappt, steht auch in der Datei
 `benachrichtigung.json` im Projekt (`eingerichtet` und ggf. `letzter_fehler`).

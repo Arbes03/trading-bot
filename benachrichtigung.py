@@ -313,6 +313,76 @@ def wochenbericht_melden(status: dict, montag: str, etf_wochenstart: float | Non
     senden(f"🗓️ Wochenbericht: {lage} ({eur(e['woche'], vorzeichen=True)})", "\n".join(zeilen), tags=["calendar"])
 
 
+def kurs_text(x: float) -> str:
+    """Kurs mit passenden Nachkommastellen (XRP 0,8537 €, SAP 210,55 €)."""
+    stellen = 4 if x < 10 else 2
+    return f"{x:,.{stellen}f}".replace(",", " ").replace(".", ",").replace(" ", ".") + " €"
+
+
+def morgengruss_melden(status: dict, jetzt, anzahl_kurse: int | None, etf_woche: float | None):
+    """Jeden Morgen: Lebenszeichen, Stand, aktuelle Ziele und der Plan für die Woche."""
+    m, e, nb = status["einstellungen"]["motor"], status["ergebnis"], status.get("notbremse") or {}
+    wochenende = jetzt.weekday() >= 5
+    anzahl = len(status["einstellungen"]["watchlist"])
+    zeilen = [f"✅ Ich laufe. Letzte Prüfung {status['letzte_runde']} Uhr"
+              + (f", Kurse für {anzahl_kurse}/{anzahl} Werte" if anzahl_kurse is not None else "")
+              + (" (am Wochenende nur Krypto)" if wochenende else "") + f" · Motor {m['titel']}",
+              "",
+              f"💰 Depot: {eur(status['depotwert'])} · seit Start {eur(e['gesamt'], vorzeichen=True)}"
+              + (f" · diese Woche {eur(e['woche'], vorzeichen=True)}" if jetzt.weekday() else "")]
+
+    # Aktuelle Ziele
+    if nb.get("aktiv"):
+        zeilen += ["", "⏸️ Ich bin pausiert (Notbremse) und kaufe nichts, bis du /weiter schreibst."]
+    else:
+        zeilen.append("")
+        for p in status["positionen"]:
+            einstand = p["einstandskurs"]
+            hoch = max(p.get("hoechstkurs") or einstand, p["kurs"])
+            sicherung = einstand * (1 - m["stop_loss"])
+            if hoch > einstand:
+                sicherung = max(sicherung, hoch * (1 - m["trailing_stop"]))
+            zeilen.append(f"📌 Ich halte {p['name']}: {eur(p['wert'])} ({eur(p['gewinn'], vorzeichen=True)})")
+            zeilen.append(f"🎯 Ziel: Verkauf mit Gewinn bei {kurs_text(einstand * (1 + m['take_profit']))} "
+                          f"(+{m['take_profit']:.0%}), zur Sicherheit raus unter {kurs_text(sicherung)}")
+        plaetze = m.get("max_positionen") or status["einstellungen"]["max_positionen"]
+        if len(status["positionen"]) < plaetze:
+            if not status["positionen"]:
+                zeilen.append(f"💵 Alles Bargeld ({eur(status['bargeld'])}), bereit für den nächsten Kauf.")
+            liste = (status.get("kandidaten") or {}).get("liste") or []
+            if m["einstieg"] == "momentum":
+                zeilen.append(f"🔭 Ich suche eine Rakete: mind. +{m['momentum_min']:.0%} in ca. "
+                              f"{round(m['momentum_kerzen'] / 9)} Tagen, Trend nach oben.")
+                bereit = [k for k in liste if k.get("kaufbereit")]
+                steigend = [k for k in liste if (k.get("momentum") or 0) > 0]
+                if bereit:
+                    zeilen.append(f"   Kaufbereit: {bereit[0]['name']} ({bereit[0]['momentum'] * 100:+.1f} %)".replace(".", ","))
+                elif steigend:
+                    zeilen.append("   Am nächsten dran: " + ", ".join(
+                        f"{k['name']} {k['momentum'] * 100:+.1f} %".replace(".", ",") for k in steigend[:3]))
+                else:
+                    zeilen.append("   Gerade steigt nichts stark genug, ich warte ab.")
+        if nb.get("grenze"):
+            zeilen.append(f"🛡️ Notbremse bei {eur(nb['grenze'])} (noch {eur(status['depotwert'] - nb['grenze'])} Luft)")
+
+    # Plan für die Woche
+    zeilen += ["", "🗓️ " + ("Plan für die neue Woche:" if jetzt.weekday() == 0 else "Plan für diese Woche:")]
+    if wochenende:
+        zeilen.append("• Wochenende: Aktien ruhen, ich beobachte Krypto. Ab Montag 9:30 Uhr kaufe ich wieder Aktien.")
+    zeilen.append(f"• Nur kaufen, wenn ein Wert wirklich startet (+{m['momentum_min']:.0%}), höchstens "
+                  f"{m['max_kaeufe_pro_tag']} Käufe am Tag, {m['max_anteil']:.0%} des Geldes in einen Wert.")
+    zeilen.append(f"• Gewinne bis +{m['take_profit']:.0%} laufen lassen, Verluste ab −{m['stop_loss']:.0%} begrenzen.")
+    vg = status.get("vergleich") or {}
+    if etf_woche is not None and jetzt.weekday():
+        zeilen.append(f"• Ziel: besser als einfach {vg.get('name', 'den ETF')} halten. Bisher diese Woche: "
+                      f"Bot {eur(e['woche'], vorzeichen=True)}, ETF {eur(etf_woche, vorzeichen=True)}")
+    else:
+        zeilen.append(f"• Ziel: besser abschneiden als einfach {vg.get('name', 'den ETF')} halten.")
+    zeilen.append("Ein festes Gewinnziel pro Woche kann ich nicht versprechen, der Markt entscheidet mit. Nur Spielgeld.")
+    gruss = "Guten Morgen" if jetzt.hour < 11 else "Hallo"
+    senden(f"☀️ {gruss}! Ich laufe, Depot {eur(status['depotwert'])}", "\n".join(zeilen), tags=["sunny"])
+
+
 def tagesabschluss_melden(status: dict, datum: str):
     zeilen, lage = zusammenfassung(status, datum)
     senden(f"Tagesabschluss: {lage} ({eur(status['ergebnis']['gesamt'], vorzeichen=True)})", "\n".join(zeilen),

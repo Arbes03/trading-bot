@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import benachrichtigung
 import lagebericht
 import config
-from benachrichtigung import (eingerichtet, notbremse_melden, senden, stand_melden, tagesabschluss_melden, wochenbericht_melden,
+from benachrichtigung import (eingerichtet, morgengruss_melden, notbremse_melden, senden, stand_melden, tagesabschluss_melden, wochenbericht_melden,
                               telegram_befehle_holen, telegram_einrichten, trade_melden, willkommen_melden,
                               wunsch_verkauf_melden)
 import bot
@@ -74,6 +74,7 @@ def main():
         stand_gewuenscht |= befehl_ausfuehren(befehl, depot, jetzt, melden)
 
     kurse: dict[str, float] = {}
+    anzahl = None  # Werte mit aktuellen Kursen in dieser Runde
     # Zur Börsenzeit wird alles geprüft, sonst nur Krypto (läuft rund um die Uhr)
     if boerse_offen(jetzt) or any(config.rund_um_die_uhr(t) for t in config.WATCHLIST):
         motor = aktiver_motor()
@@ -152,6 +153,7 @@ def main():
     if config.NACHRICHT_TAGESABSCHLUSS:
         tagesabschluss_pruefen(jetzt, status, gemerkt)
     zwischenstand_pruefen(jetzt, status, gemerkt)
+    morgengruss_pruefen(jetzt, status, gemerkt, anzahl)
     wochenbericht_pruefen(jetzt, status, gemerkt)
     # Zur Kontrolle (ohne Zugangsdaten): welche Wege eingerichtet sind, letzte Nachricht, letzter Fehler
     gemerkt["eingerichtet"] = wege or "keine"
@@ -250,6 +252,27 @@ def wochenbericht_pruefen(jetzt: datetime, status: dict, gemerkt: dict):
     wochenbericht_melden(status, montag, etf_start)
     gemerkt["wochenbericht"] = kennung
     print("Wochenbericht gesendet.")
+
+
+def morgengruss_pruefen(jetzt: datetime, status: dict, gemerkt: dict, anzahl: int | None):
+    """Jeden Morgen ab MORGENGRUSS_AB einmal: "Ich laufe" + Ziele + Wochenplan (bis 12 Uhr, danach nicht mehr)."""
+    heute = f"{jetzt:%Y-%m-%d}"
+    if not eingerichtet() or not config.MORGENGRUSS_AB or gemerkt.get("morgengruss") == heute:
+        return
+    if not config.MORGENGRUSS_AB <= uhrzeit(jetzt) < "12:00":
+        return
+    try:
+        montag = f"{jetzt - timedelta(days=jetzt.weekday()):%Y-%m-%d}"
+        verlauf = verlauf_lesen(config.VERLAUF_DATEI)
+        vorher = [v["halten"] for v in verlauf if v["zeit"][:10] < montag and v.get("halten")]
+        jetzt_etf = (status.get("vergleich") or {}).get("wert")
+        etf_woche = jetzt_etf - vorher[-1] if vorher and jetzt_etf else None
+        morgengruss_melden(status, jetzt, anzahl, etf_woche)
+    except Exception as fehler:  # eine Nachricht darf den Bot nie aufhalten
+        print(f"Morgengruß nicht gesendet: {fehler!r}")
+        return
+    gemerkt["morgengruss"] = heute
+    print("Morgengruß gesendet.")
 
 
 def zwischenstand_pruefen(jetzt: datetime, status: dict, gemerkt: dict):

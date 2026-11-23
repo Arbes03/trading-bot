@@ -277,5 +277,6 @@ LAGE_TEMPO = "+5%"                 # etwas schneller als normal klingt natürlic
 NTFY_SERVER = "https://ntfy.sh"
 NACHRICHT_BEI_TRADES = True        # bei jedem Kauf und Verkauf
 NACHRICHT_TAGESABSCHLUSS = True    # einmal pro Handelstag nach Börsenschluss
+MORGENGRUSS_AB = "08:00"           # jeden Morgen (auch am Wochenende): "Ich laufe" + Ziele + Wochenplan, None = aus
 ZWISCHENSTAND_UM = ["12:00"]       # zusätzliche Stand-Nachrichten an Handelstagen (deutsche Zeit), [] = keine
 BENACHRICHTIGUNG_DATEI = "benachrichtigung.json"  # merkt sich, wann der letzte Tagesabschluss kam
